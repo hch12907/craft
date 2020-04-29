@@ -112,95 +112,11 @@ impl MeshBuilder {
     }
 
     pub fn create_cube(length: f32, origin: Vector3F, faces: Face) -> Mesh {
-        /*Self::create_cuboid(
+        Self::create_cuboid(
             Vector3F::new(length, length, length), 
             origin,
             faces
-        )*/
-
-        if faces == Face::empty() {
-            return MeshBuilder::new().build()
-        };
-        
-        let mut actual_indices = Vec::new();
-        let mut mapped_indices = [std::u32::MAX; 8];
-        let mut added_vertices = Vec::new();
-
-        let halved = length * 0.5;
-        let create_vertex = |x, y, z| {
-            let color = {
-                let origin = origin / (128.0 / 8.0);
-                let (x, y, z) = (origin.x(), origin.y(), origin.z());
-                //let (x, y, z): (f32, f32, f32) = (random(), random(), random());
-                RGBA::new(z.abs(), z.abs(), z.abs(), 1.0)
-            };
-
-            Vertex::new(
-                Vector3F::new(x, y, z) - halved + origin,
-                color,
-                //RGBA::new(0.8, 0.8, 0.8, 1.0),
-                Vector2F::new(0.0, 0.0)
-            )
-        };
-
-        let mut add_index = |index| {
-            if mapped_indices[index] == std::u32::MAX {
-                let vertex = match index {
-                    0 => create_vertex(-halved, -halved, -halved), // index 0
-                    1 => create_vertex(-halved,  halved, -halved), // index 1
-                    2 => create_vertex( halved,  halved, -halved), // index 2
-                    3 => create_vertex( halved, -halved, -halved), // index 3
-                    4 => create_vertex(-halved, -halved,  halved), // index 4
-                    5 => create_vertex(-halved,  halved,  halved), // index 5
-                    6 => create_vertex( halved,  halved,  halved), // index 6
-                    7 => create_vertex( halved, -halved,  halved), // index 7
-                    _ => unreachable!(),
-                };
-                actual_indices.push(added_vertices.len() as u32);
-                mapped_indices[index] = added_vertices.len() as u32;
-                added_vertices.push(vertex);
-            } else {
-                actual_indices.push(mapped_indices[index]);
-            }
-        };
-
-        if faces.intersects(Face::BACK) {
-            add_index(0); add_index(1); add_index(2);
-            add_index(0); add_index(2); add_index(3); // back
-        };
-
-        if faces.intersects(Face::RIGHT) {
-            add_index(4); add_index(5); add_index(1);
-            add_index(4); add_index(1); add_index(0); // right
-        };
-            
-        if faces.intersects(Face::TOP) {
-            add_index(1); add_index(5); add_index(6);
-            add_index(1); add_index(6); add_index(2); // top
-        }
-
-        if faces.intersects(Face::FRONT) {
-            add_index(5); add_index(4); add_index(7);
-            add_index(5); add_index(7); add_index(6); // front
-        }
-
-        if faces.intersects(Face::LEFT) {
-            add_index(6); add_index(7); add_index(3);
-            add_index(6); add_index(3); add_index(2); // left`
-        }
-
-        if faces.intersects(Face::BOTTOM) {
-            add_index(7); add_index(0); add_index(3);
-            add_index(7); add_index(4); add_index(0); // bottom
-        }
-
-        let builder = Self {
-            vertices: added_vertices,
-            indices: actual_indices,
-            textures: Vec::new(),
-        };
-
-        builder.build()
+        )
     }
 
     pub fn add_vertex(mut self, vert: Vertex) -> Self {

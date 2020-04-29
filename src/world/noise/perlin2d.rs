@@ -8,14 +8,14 @@ use rand_distr::{ Distribution, UnitCircle };
 /// A 2D Perlin noise generator. The implementation is based on the one used in
 /// TrueCraft.
 pub struct Perlin2D {
-    pub(in super) octaves: u32,
+    octaves: u32,
     
-    pub(in super) amplitude: f64,
-    pub(in super) frequency: f32,
-    pub(in super) lacunarity: f32, // lacunarity means "gap".
-    pub(in super) persistance: f64,
+    amplitude: f64,
+    frequency: f32,
+    lacunarity: f32, // lacunarity means "gap".
+    persistance: f64,
     
-    pub(in super) rng: Random,
+    rng: Random,
 }
 
 impl Perlin2D {
