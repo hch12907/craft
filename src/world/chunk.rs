@@ -2,7 +2,8 @@ use std::mem::MaybeUninit;
 use std::ops::Deref;
 
 use crate::mesh::Mesh;
-use crate::maths::{ Vector3F, Vector3I };
+use crate::maths::{ Vector2F, Vector3F, Vector3I };
+use crate::utils::lerp;
 use super::*;
 
 #[derive(Clone, Debug)]
@@ -17,8 +18,9 @@ pub struct Section {
 }
 
 impl Chunk {
-    pub fn new<A>(at: A, noise: &mut Noise) -> Self 
-        where A: Into<ChunkPos>
+    pub fn new<A, G>(at: A, noise: &mut Noise2D<G>) -> Self 
+        where A: Into<ChunkPos>,
+              G: NoiseGen<Vector2F>
     {
         let at = at.into();
 
@@ -62,7 +64,9 @@ impl Deref for Section {
 }
 
 impl Section {
-    pub fn new(at: SectionPos, noise: &mut Noise) -> Self {
+    pub fn new<G>(at: SectionPos, noise: &mut Noise2D<G>) -> Self 
+        where G: NoiseGen<Vector2F>
+    {
         let blocks: Box<[[[Block; 16]; 16]; 16]>;
 
         let SectionPos(pos) = at;
@@ -90,17 +94,17 @@ impl Section {
         //    }
         //}
 
-        let mut noises = [[0.0; 4 + 1]; 4 + 1];
+        /*let mut noises = [[0.0; 4 + 1]; 4 + 1];
         for x in 0..=(16 / 4) {
             for y in 0..=(16 / 4) {
                 let relative_pos = Vector3I::new(x * 4, y * 4, 0);
                 let actual_pos = starting + relative_pos;
                 let block_pos = Vector3F::from(actual_pos).trunc2();
-                let noise = noise.generate_noise_2d(block_pos);
+                let noise = noise.generate_noise(block_pos);
                 let (x, y) = (x as usize, y as usize);
                 noises[x][y] = noise;
             }
-        }
+        }*/
 
         for x in 0..16 {
             let mut bloy = unsafe { uninit_arr!([Block; 16], 16) };
@@ -113,19 +117,18 @@ impl Section {
                     let actual_pos = starting + relative_pos;
                     let block_pos = Vector3F::from(actual_pos);
 
-                    let noise = {
+                    /*let noise = {
                         // 16.0 * (block_pos.x() * 0.025).sin().abs() +
                         // 16.0 * (block_pos.z() * 0.025).sin().abs() +
                         // 32.0
                         
-                        /*let weight_factor = 1.0 / 16.0;
-                        let weight_x = weight_factor * x as f32;
-                        //let weight_y = weight_factor * y as f32;
-                        let weight_z = weight_factor * z as f32;
+                        let weight_factor = 1.0 / 16.0;
+                        let weight_x = weight_factor * x as f64;
+                        //let weight_y = weight_factor * y as f64;
+                        let weight_z = weight_factor * z as f64;
 
-                        let (x, y, z) = (x as usize >> 3, y as usize >> 2, z as usize >> 3);
+                        let (x, y, z) = (x as usize >> 4, y as usize >> 2, z as usize >> 4);
 
-                        let lerp = |x, y, w| (x as f32) * (1.0 - w) + (y as f32);
                         //let lerp1 = lerp(noises[x][y][z], noises[x + 1][y][z], weight_x);
                         //let lerp2 = lerp(noises[x][y][z], noises[x][y + 1][z], weight_y);
                         //let lerp3 = lerp(noises[x][y][z], noises[x][y][z + 1], weight_z);
@@ -133,12 +136,15 @@ impl Section {
                         let lerp2 = lerp(noises[x][z], noises[x][z + 1], weight_z);
 
                         //0.333333 * (lerp1 + lerp2 + lerp3)
-                        0.5 * (lerp1 + lerp2);*/
+                        0.5 * (lerp1 + lerp2)
+                    };*/
 
+                    let noise = {
                         let block_pos = block_pos * 0.125;
-                        0.5 * (block_pos.x().sin() + block_pos.z().sin())
+                        noise.generate_noise(block_pos.shuffle([0, 2, 1]).trunc2())
                     };
-                    let id = if 32.0 * noise + 64.0 > block_pos.y() {
+
+                    let id = if 32.0 * noise + 64.0 > block_pos.y() as f64 {
                         1
                     } else {
                         0

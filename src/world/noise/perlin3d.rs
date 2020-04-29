@@ -1,20 +1,21 @@
 use crate::maths::{ Vector3D, Vector3I, Vector3F, Random };
-//use rand::RngCore;
-//use rand::distributions::Distribution;
-//use rand_distr::UnitSphere;
-use super::{ lerp, interpolate };
+use crate::utils::{ lerp, fade };
+use super::{ NoiseGen, NoiseGenOption };
+
+use rand::SeedableRng;
 
 /// A 3D Perlin noise generator. The implementation is largely similar to the
 /// reference implementation by Ken Perlin
 /// ([see here](https://mrl.nyu.edu/~perlin/noise/)). 
 pub struct Perlin3D {
-    pub(in super) octaves: u32,
+    pub octaves: u32,
 
-    pub(in super) amplitude: f32,
-    pub(in super) frequency: f32,
-    pub(in super) lacunarity: f32, // lacunarity means "gap".
-    pub(in super) persistance: f32,
-    pub(in super) rng: Random,
+    pub amplitude: f64,
+    pub frequency: f32,
+    pub lacunarity: f32, // lacunarity means "gap".
+    pub persistance: f64,
+    
+    pub rng: Random,
 }
 
 const PERMUTATIONS: [i32; 512] = [
@@ -48,15 +49,15 @@ const PERMUTATIONS: [i32; 512] = [
 ];
 
 impl Perlin3D {
-    pub fn generate_noise_at(&mut self, pos: Vector3F) -> f64 {
+    fn generate_noise(&mut self, pos: Vector3F) -> f64 {
         //let random = self.rng.next_u64() as f64 / (1u64 << 54) as f64;
         let grid = Vector3I::from(pos);
         let cube = grid & 255;
         let relative = Vector3D::from(pos) - Vector3D::from(grid);
 
-        let weight_n = interpolate(relative.z());
-        let weight_m = interpolate(relative.y());
-        let weight_l = interpolate(relative.x());
+        let weight_n = fade(relative.z());
+        let weight_m = fade(relative.y());
+        let weight_l = fade(relative.x());
 
         let  c = cube.x() as usize;
         let  a = (PERMUTATIONS[c + 0] + cube.y()) as usize;
@@ -107,14 +108,29 @@ impl Perlin3D {
         let result = lerp(m1, m2, weight_l);
         result
     }
+}
 
-    pub fn generate_noise(&mut self, pos: Vector3F) -> f32 {
+impl NoiseGen<Vector3F> for Perlin3D {
+    fn with_option_and_seed(option: NoiseGenOption, seed: u64) -> Self {
+        Self {
+            octaves: option.octaves,
+            amplitude: option.amplitude,
+            frequency: option.frequency,
+            lacunarity: option.lacunarity,
+            persistance: option.persistance,
+            rng: Random::seed_from_u64(seed),
+        }
+    }
+
+    fn generate_noise_at(&mut self, pos: Vector3F) -> f64 {
         let mut total = 0.0;
+
         for _ in 0..self.octaves {
-            total += self.generate_noise_at(pos * self.frequency) * self.amplitude as f64;
+            total += self.generate_noise(pos * self.frequency) * self.amplitude;
             self.amplitude *= self.persistance;
             self.frequency *= self.lacunarity;
         };
-        total as f32
+
+        total
     }
 }

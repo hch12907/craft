@@ -31,7 +31,9 @@ fn main() {
         for x in bound0..bound1 {
             for y in bound0..bound1 {
                 let tx = tx.clone();
-                let mut noise = world::Noise::new(((x << 5) ^ (y + 1234)) as u64);
+                let mut noise = world::Noise2D::<world::SineNoise>::new(
+                    ((x << 5) ^ (y + 1234)) as u64
+                );
 
                 std::thread::spawn(move || {
                     let pos = maths::Vector2I::new(x, y);

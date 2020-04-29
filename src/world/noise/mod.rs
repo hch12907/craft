@@ -1,88 +1,73 @@
+mod generator;
+mod options;
 mod perlin2d;
 mod perlin3d;
+mod sine;
 
+use crate::maths::*;
+
+pub use generator::NoiseGen;
+pub use options::NoiseGenOption;
 pub use perlin2d::Perlin2D;
 pub use perlin3d::Perlin3D;
+pub use sine::*;
 
-use crate::maths::Random;
-use rand::SeedableRng;
-
-pub struct PerlinOption {
-    octaves: u32,
-    amplitude: f32,
-    frequency: f32,
-    lacunarity: f32,
-    persistance: f32,
+pub struct Noise2D<G: NoiseGen<Vector2F>> {
+    generator: G,
 }
 
-impl PerlinOption {
-    pub fn new() -> Self {
+impl<G: NoiseGen<Vector2F>> Noise2D<G> {
+    pub fn new(seed: u64) -> Self {
+        let opt = NoiseGenOption::new()
+            .octaves(1)    
+            .frequency(1.0)
+            .amplitude(1.0)
+            .persistance(1.0)
+            .lacunarity(1.0);
+        
         Self {
-            octaves: 1,
-            amplitude: 1.0,
-            frequency: 1.0,
-            lacunarity: 1.0,
-            persistance: 1.0,
+            // generator: Pcg64::new(seed as u128, 0xa02bdbf7bb3c0a7ac28fa16a64abf96),
+            generator: G::with_option_and_seed(opt, seed)
         }
     }
 
-    pub fn amplitude(mut self, amp: f32) -> Self {
-        self.amplitude = amp;
-        self
-    }
-
-    pub fn frequency(mut self, freq: f32) -> Self {
-        self.frequency = freq;
-        self
-    }
-
-    pub fn lacunarity(mut self, lac: f32) -> Self {
-        self.lacunarity = lac;
-        self
-    }
-
-    pub fn persistance(mut self, per: f32) -> Self {
-        self.persistance = per;
-        self
-    }
-
-    pub fn octaves(mut self, oct: u32) -> Self {
-        self.octaves = oct;
-        self
-    }
-
-    pub fn build_2d(self, seed: u64) -> Perlin2D {
-        Perlin2D {
-            octaves: self.octaves,
-            amplitude: self.amplitude,
-            frequency: self.frequency,
-            lacunarity: self.lacunarity,
-            persistance: self.persistance,
-            rng: Random::seed_from_u64(seed),
+    pub fn with_option(option: NoiseGenOption, seed: u64) -> Self {
+        Self {
+            generator: G::with_option_and_seed(option, seed)
         }
     }
 
-    pub fn build_3d(self, seed: u64) -> Perlin3D {
-        Perlin3D {
-            octaves: self.octaves,
-            amplitude: self.amplitude,
-            frequency: self.frequency,
-            lacunarity: self.lacunarity,
-            persistance: self.persistance,
-            rng: Random::seed_from_u64(seed),
-        }
+    pub fn generate_noise(&mut self, at: Vector2F) -> f64 {
+        self.generator.generate_noise_at(at)
     }
 }
 
-// --- Helper functions start here ---
-use std::ops::{ Add, Sub, Mul };
-
-pub (in self) fn lerp<T>(x: T, y: T, t: T) -> T 
-    where T: Add<T, Output=T> + Sub<T, Output=T> + Mul<T, Output=T> + Copy
-{
-    x + t * (y - x)
+pub struct Noise3D<G: NoiseGen<Vector3F>> {
+    generator: G,
 }
 
-pub (in self) fn interpolate(t: f64) -> f64 {
-    t * t * t * (t * (t * 6.0  - 15.0) + 10.0)
+impl<G: NoiseGen<Vector3F>> Noise3D<G> {
+    pub fn new(seed: u64) -> Self {
+        let opt = NoiseGenOption::new()
+            .octaves(8)    
+            .frequency(0.7)
+            .amplitude(20.0)
+            .persistance(1.05)
+            .lacunarity(0.9);
+        
+        Self {
+            // generator: Pcg64::new(seed as u128, 0xa02bdbf7bb3c0a7ac28fa16a64abf96),
+            generator: G::with_option_and_seed(opt, seed)
+        }
+    }
+
+    pub fn with_option(option: NoiseGenOption, seed: u64) -> Self {
+        Self {
+            generator: G::with_option_and_seed(option, seed)
+        }
+    }
+
+    pub fn generate_noise(&mut self, at: Vector3F) -> f64 {
+        self.generator.generate_noise_at(at)
+    }
 }
