@@ -1,4 +1,4 @@
-#![feature(new_uninit)]
+#![feature(const_generics)]
 #![feature(maybe_uninit_ref)]
 
 use std::time::Instant;

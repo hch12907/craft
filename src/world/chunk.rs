@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::mesh::Mesh;
 use crate::maths::{ Vector2F, Vector3F, Vector3I };
-use crate::utils::lerp;
+use crate::utils::{ lerp, PartialArray };
 use super::*;
 
 #[derive(Clone, Debug)]
@@ -72,12 +72,6 @@ impl Section {
         let SectionPos(pos) = at;
         let starting = pos * 16;
 
-        macro_rules! uninit_arr {
-            ($inner:ty, $len:expr) => {
-                MaybeUninit::<[MaybeUninit::<$inner>; $len]>::uninit().assume_init()
-            }
-        }
-
         let mut blox: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
 
         //let mut noises = [[[0.0; 2 + 1]; 4 + 1]; 2 + 1];
@@ -107,10 +101,10 @@ impl Section {
         }*/
 
         for x in 0..16 {
-            let mut bloy = unsafe { uninit_arr!([Block; 16], 16) };
+            let mut bloy = PartialArray::<[Block; 16], 16>::new();
 
             for y in 0..16 {
-                let mut bloz = unsafe { uninit_arr!(Block, 16) };
+                let mut bloz = PartialArray::<Block, 16>::new();
 
                 for z in 0..16 {
                     let relative_pos = Vector3I::new(x, y, z);
@@ -150,15 +144,16 @@ impl Section {
                         0
                     };
 
-                    bloz[z as usize] = MaybeUninit::new(Block::new(id));
+                    bloz.push(Block::new(id)).unwrap();
                 }
 
-                bloy[y as usize] = unsafe { std::mem::transmute(bloz) };
+                bloy.push(bloz.into_full_array().unwrap()).unwrap();
             }
 
-            blox.push(unsafe { std::mem::transmute(bloy) });
+            blox.push(bloy.into_full_array().unwrap());
         }
 
+        // Convert Vec<[[Block; 16]; 16]> into Box<[[[Block; 16]; 16]; 16]>
         blocks = unsafe {
             let mut blox = std::mem::ManuallyDrop::new(blox);
             assert!(blox.len() == 16, "a chunk should have 16 sections");
@@ -168,6 +163,7 @@ impl Section {
 
         /*
         // TODO: Make things flat
+        // (prerequisite: an actual working const generic system in rust)
         let range = (0..16)
             .flat_map(|x| (0..16)
                 .flat_map(|y| (0..16)
