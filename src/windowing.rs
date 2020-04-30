@@ -17,7 +17,7 @@ impl Window {
 
         let win = WindowBuilder::new()
             .with_inner_size(glutin::dpi::LogicalSize { width: 1024, height: 576 })
-            .with_title("sine curve");
+            .with_title("gecraftet");
 
         let ctx = ContextBuilder::new()
             .with_gl(GlRequest::Specific(GlApi::OpenGl, (4, 0)))
