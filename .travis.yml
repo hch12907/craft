@@ -1,0 +1,4 @@
+language: rust
+rust:
+  - nightly # due to the usage of unstable features
+cache: cargo
