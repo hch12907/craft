@@ -1,7 +1,3 @@
-use crate::maths::Random;
-use super::{ Perlin2D, Perlin3D };
-use rand::SeedableRng;
-
 pub struct NoiseGenOption {
     pub(in super) octaves: u32,
     pub(in super) amplitude: f64,

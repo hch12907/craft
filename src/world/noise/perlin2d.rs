@@ -1,9 +1,8 @@
-use crate::maths::{ Vector2D, Vector2F, Vector2I, Random };
+use crate::maths::{ Vector2D, Vector2F, Vector2I, Vector3F, Random };
 use crate::utils::{ lerp, fade };
 use super::{ NoiseGen, NoiseGenOption };
 
-use rand::SeedableRng;
-use rand_distr::{ Distribution, UnitCircle };
+use rand::{ Rng, SeedableRng };
 
 /// A 2D Perlin noise generator. The implementation is based on the one used in
 /// TrueCraft.
@@ -15,58 +14,87 @@ pub struct Perlin2D {
     lacunarity: f32, // lacunarity means "gap".
     persistance: f64,
     
-    rng: Random,
+    permutations: Box<[u8; 512]>,
 }
 
 impl Perlin2D {
     fn generate_noise(&mut self, pos: Vector2F) -> f64 {
-        let pos = Vector2D::from(pos);
-        let grid_orig = Vector2I::from(pos);
-        let grid_edge = grid_orig + 1;
-        let offset = pos - Vector2D::from(grid_orig);
+        let grid = Vector2I::from(pos);
+        let cube = grid & 255;
+        let relative = Vector2D::from(pos) - Vector2D::from(grid);
 
-        let mut calc_noise = |at, grid_x, grid_y| {
-            let grad = Vector2D::from_array(UnitCircle.sample(&mut self.rng));
-            let dist = at - Vector2D::from(Vector2I::new(grid_x, grid_y));
-            let dist: Vector2D = dist;
-            dist.dot(grad)
+        let weight_m = fade(relative.y());
+        let weight_l = fade(relative.x());
+
+        let  c = cube.x() as usize;
+        let  a = (self.permutations[c + 0] as i32 + cube.y()) as usize;
+        let aa = (self.permutations[a + 0]) as usize;
+        let ab = (self.permutations[a + 1]) as usize;
+
+        let grad = |hash, x: f64, y, z| -> f64 {
+            let hash = hash & 15;
+            let u = if hash < 8 { x } else { y };
+            let v = if hash < 4 { 
+                y 
+            } else {
+                if hash == 12 || hash == 14 { 
+                    x 
+                } else { 
+                    z
+                }
+            };
+            let r0 = if hash & 1 == 0 { u } else { -u };
+            let r1 = if hash & 2 == 0 { v } else { -v };
+            r0 + r1
         };
 
-        let noise_00 = calc_noise(pos, grid_orig.x(), grid_orig.y());
-        let noise_01 = calc_noise(pos, grid_orig.x(), grid_edge.y());
-        
-        let noise_10 = calc_noise(pos, grid_edge.x(), grid_orig.y());
-        let noise_11 = calc_noise(pos, grid_edge.x(), grid_edge.y());
+        let (x, y) = (relative.x(), relative.y());
 
-        let weight_n = fade(offset.y());
-        let weight_l = fade(offset.x());
+        let noise_000 = grad(self.permutations[aa+0], x, y,       0.0 + 0.0);
+        let noise_010 = grad(self.permutations[ab+0], x, y - 1.0, 0.0 + 0.0);
+        let noise_100 = grad(self.permutations[aa+1], x, y,       0.0 - 1.0);
+        let noise_110 = grad(self.permutations[ab+1], x, y - 1.0, 0.0 - 1.0);
 
-        let n1 = lerp(noise_00, noise_01, weight_n);
-        let n2 = lerp(noise_10, noise_11, weight_n);
+        let m1 = lerp(noise_000, noise_010, weight_m);
+        let m2 = lerp(noise_100, noise_110, weight_m);
 
-        lerp(n1, n2, weight_l) 
+        let result = lerp(m1, m2, weight_l);
+        result
     }
 }
 
-impl NoiseGen<Vector2F> for Perlin2D {
+impl NoiseGen for Perlin2D {
     fn with_option_and_seed(option: NoiseGenOption, seed: u64) -> Self {
+        let mut rng = Random::seed_from_u64(seed);
+        
+        let mut permutations = Box::new([0; 512]);
+        for i in 0..256 {
+            permutations[i] = rng.gen::<u8>();
+            permutations[i + 256] = rng.gen::<u8>();
+        };
+        
         Self {
             octaves: option.octaves,
             amplitude: option.amplitude,
             frequency: option.frequency,
             lacunarity: option.lacunarity,
             persistance: option.persistance,
-            rng: Random::seed_from_u64(seed),
+            permutations,
         }
     }
 
-    fn generate_noise_at(&mut self, pos: Vector2F) -> f64 {
+    fn generate_noise_at(&mut self, pos: Vector3F) -> f64 {
         let mut total = 0.0;
 
+        let mut amplitude = self.amplitude;
+        let mut frequency = self.frequency;
+        
+        let pos = pos.trunc2();
+
         for _ in 0..self.octaves {
-            total += self.generate_noise(pos * self.frequency) * self.amplitude;
-            self.amplitude *= self.persistance;
-            self.frequency *= self.lacunarity;
+            total += self.generate_noise(pos * frequency) * amplitude;
+            amplitude *= self.persistance;
+            frequency *= self.lacunarity;
         };
 
         total
