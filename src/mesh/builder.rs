@@ -33,7 +33,7 @@ impl MeshBuilder {
                 let origin = origin * 0.026315; // (1 / 38.0)
                 let (x, y, z) = (origin.x(), origin.y(), origin.z());
                 //let (x, y, z): (f32, f32, f32) = (random(), random(), random());
-                RGBA::new(0.8 * ( 0.6 * x.abs() + 0.4 * y.abs()), 1.1 * y.abs(), 1.1 * z.abs(), 1.0)
+                RGBA::new(0.8 * ( 0.6 * x.abs() + 0.4 * y.abs()), 1.0 - 1.1 * y.abs(), 1.1 * z.abs(), 1.0)
             };
 
             Vertex::new(

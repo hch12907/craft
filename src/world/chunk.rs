@@ -18,9 +18,9 @@ pub struct Section {
 }
 
 impl Chunk {
-    pub fn new<A, G>(at: A, noise: &mut Noise2D<G>) -> Self 
+    pub fn new<A, G>(at: A, noise: &mut Noise<G>) -> Self 
         where A: Into<ChunkPos>,
-              G: NoiseGen<Vector2F>
+              G: NoiseGen
     {
         let at = at.into();
 
@@ -64,8 +64,8 @@ impl Deref for Section {
 }
 
 impl Section {
-    pub fn new<G>(at: SectionPos, noise: &mut Noise2D<G>) -> Self 
-        where G: NoiseGen<Vector2F>
+    pub fn new<G>(at: SectionPos, noise: &mut Noise<G>) -> Self 
+        where G: NoiseGen
     {
         let blocks: Box<[[[Block; 16]; 16]; 16]>;
 
@@ -74,31 +74,19 @@ impl Section {
 
         let mut blox: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
 
-        //let mut noises = [[[0.0; 2 + 1]; 4 + 1]; 2 + 1];
-        //for x in 0..=(16 / 8) {
-        //    for y in 0..=(16 / 4) {
-        //        for z in 0..=(16 / 8) {
-        //            let relative_pos = Vector3I::new(x * 8, y * 4, z * 8);
-        //            let actual_pos = starting + relative_pos;
-        //            let block_pos = Vector3F::from(actual_pos);
-        //            let noise = noise.generate_noise_3d(block_pos);
-        //            let (x, y, z) = (x as usize, y as usize, z as usize);
-        //            noises[x][y][z] = noise;
-        //        }
-        //    }
-        //}
-
-        /*let mut noises = [[0.0; 4 + 1]; 4 + 1];
-        for x in 0..=(16 / 4) {
-            for y in 0..=(16 / 4) {
-                let relative_pos = Vector3I::new(x * 4, y * 4, 0);
-                let actual_pos = starting + relative_pos;
-                let block_pos = Vector3F::from(actual_pos).trunc2();
-                let noise = noise.generate_noise(block_pos);
-                let (x, y) = (x as usize, y as usize);
-                noises[x][y] = noise;
+        let mut noises = [[[0.0; 2]; 4]; 2];
+        for x in 0..(16 / 8) {
+            for y in 0..(16 / 4) {
+                for z in 0..(16 / 8) {
+                    let relative_pos = Vector3I::new(x * 8, y * 4, z * 8);
+                    let actual_pos = starting + relative_pos;
+                    let block_pos = Vector3F::from(actual_pos);
+                    let noise = noise.generate_noise(block_pos);
+                    let (x, y, z) = (x as usize, y as usize, z as usize);
+                    noises[x][y][z] = noise;
+                }
             }
-        }*/
+        }
 
         for x in 0..16 {
             let mut bloy = PartialArray::<[Block; 16], 16>::new();
@@ -107,38 +95,16 @@ impl Section {
                 let mut bloz = PartialArray::<Block, 16>::new();
 
                 for z in 0..16 {
-                    let relative_pos = Vector3I::new(x, y, z);
+                    let relative_pos = Vector3I::new(x as i32, y as i32, z as i32);
                     let actual_pos = starting + relative_pos;
                     let block_pos = Vector3F::from(actual_pos);
 
-                    /*let noise = {
-                        // 16.0 * (block_pos.x() * 0.025).sin().abs() +
-                        // 16.0 * (block_pos.z() * 0.025).sin().abs() +
-                        // 32.0
-                        
-                        let weight_factor = 1.0 / 16.0;
-                        let weight_x = weight_factor * x as f64;
-                        //let weight_y = weight_factor * y as f64;
-                        let weight_z = weight_factor * z as f64;
-
-                        let (x, y, z) = (x as usize >> 4, y as usize >> 2, z as usize >> 4);
-
-                        //let lerp1 = lerp(noises[x][y][z], noises[x + 1][y][z], weight_x);
-                        //let lerp2 = lerp(noises[x][y][z], noises[x][y + 1][z], weight_y);
-                        //let lerp3 = lerp(noises[x][y][z], noises[x][y][z + 1], weight_z);
-                        let lerp1 = lerp(noises[x][z], noises[x + 1][z], weight_x);
-                        let lerp2 = lerp(noises[x][z], noises[x][z + 1], weight_z);
-
-                        //0.333333 * (lerp1 + lerp2 + lerp3)
-                        0.5 * (lerp1 + lerp2)
-                    };*/
-
                     let noise = {
-                        let block_pos = block_pos * 0.125;
-                        noise.generate_noise(block_pos.shuffle([0, 2, 1]).trunc2())
+                        let (x, y, z) = (x / 8, y / 4, z / 8);
+                        noises[x][y][z]
                     };
 
-                    let id = if 32.0 * noise + 64.0 > block_pos.y() as f64 {
+                    let id = if noise + 32.0 - block_pos.y() as f64 > 0.0 {
                         1
                     } else {
                         0

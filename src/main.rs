@@ -31,8 +31,14 @@ fn main() {
         for x in bound0..bound1 {
             for y in bound0..bound1 {
                 let tx = tx.clone();
-                let mut noise = world::Noise2D::<world::SineNoise>::new(
-                    ((x << 5) ^ (y + 1234)) as u64
+                let mut noise = world::Noise::<world::Perlin3D>::with_option(
+                    world::NoiseGenOption::new()
+                        .octaves(16)
+                        .amplitude(1.0)
+                        .persistance(0.5)
+                        .frequency(314.159265)
+                        .lacunarity(0.5),
+                    ((x << 6) ^ (y + 123456)) as u64,
                 );
 
                 std::thread::spawn(move || {
