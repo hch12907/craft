@@ -74,10 +74,10 @@ impl Section {
 
         let mut blox: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
 
-        let mut noises = [[[0.0; 2]; 4]; 2];
-        for x in 0..(16 / 8) {
-            for y in 0..(16 / 4) {
-                for z in 0..(16 / 8) {
+        let mut noises = [[[0.0; 3]; 5]; 3];
+        for x in 0..=(16 / 8) {
+            for y in 0..=(16 / 4) {
+                for z in 0..=(16 / 8) {
                     let relative_pos = Vector3I::new(x * 8, y * 4, z * 8);
                     let actual_pos = starting + relative_pos;
                     let block_pos = Vector3F::from(actual_pos);
@@ -100,11 +100,36 @@ impl Section {
                     let block_pos = Vector3F::from(actual_pos);
 
                     let noise = {
-                        let (x, y, z) = (x / 8, y / 4, z / 8);
-                        noises[x][y][z]
+                        let (x0, y0, z0) = (
+                            x / 8 as usize, 
+                            y / 4 as usize, 
+                            z / 8 as usize
+                        );
+
+                        let (x1, y1, z1) = (
+                            x0 + 1,
+                            y0 + 1,
+                            z0 + 1
+                        );
+                        
+                        let (u, v, w) = (
+                            (x & 7) as f64 / 8.0, 
+                            (y & 3) as f64 / 4.0, 
+                            (z & 7) as f64 / 8.0
+                        );
+
+                        let lerp00 = lerp(noises[x0][y0][z0], noises[x1][y0][z0], u);
+                        let lerp01 = lerp(noises[x0][y0][z1], noises[x1][y0][z1], u);
+                        let lerp10 = lerp(noises[x0][y1][z0], noises[x1][y1][z0], u);
+                        let lerp11 = lerp(noises[x0][y1][z1], noises[x1][y1][z1], u);
+
+                        let lerp0 = lerp(lerp00, lerp10, v);
+                        let lerp1 = lerp(lerp01, lerp11, v);
+
+                        lerp(lerp0, lerp1, w)
                     };
 
-                    let id = if noise + 32.0 - block_pos.y() as f64 > 0.0 {
+                    let id = if noise + 64.0 - block_pos.y() as f64 > 0.0 {
                         1
                     } else {
                         0
@@ -148,3 +173,4 @@ impl Section {
         }
     }
 }
+
