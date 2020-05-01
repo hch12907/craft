@@ -70,7 +70,7 @@ impl NoiseGen for Perlin2D {
         let mut permutations = Box::new([0; 512]);
         for i in 0..256 {
             permutations[i] = rng.gen::<u8>();
-            permutations[i + 256] = rng.gen::<u8>();
+            permutations[i + 256] = permutations[i];
         };
         
         Self {
