@@ -2,7 +2,7 @@ use std::mem::MaybeUninit;
 use std::ops::Deref;
 
 use crate::mesh::Mesh;
-use crate::maths::{ Vector2F, Vector3F, Vector3I };
+use crate::maths::{ Vector3F, Vector3I };
 use crate::utils::{ lerp, PartialArray };
 use super::*;
 
@@ -25,19 +25,17 @@ impl Chunk {
         let at = at.into();
 
         // Avoid unnecessary copies with MaybeUninit
-        let mut sections = unsafe { 
-            MaybeUninit::<[MaybeUninit<Section>; 16]>::uninit().assume_init()
-        };
+        let mut sections = PartialArray::<Section, 16>::new();
 
         for i in 0..16 {
             let ChunkPos(pos) = at;
-            let sect = SectionPos::new(pos.x(), i as i32, pos.y());
-            sections[i] = MaybeUninit::new(Section::new(sect, noise));
+            let sect = SectionPos::new(pos.x(), i, pos.y());
+            sections.push(Section::new(sect, noise)).unwrap();
         };
 
         Self {
             position: at,
-            sections: unsafe { std::mem::transmute(sections) },
+            sections: sections.into_full_array().unwrap()
         }
     }
 
@@ -72,8 +70,6 @@ impl Section {
         let SectionPos(pos) = at;
         let starting = pos * 16;
 
-        let mut blox: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
-
         let mut noises = [[[0.0; 3]; 5]; 3];
         for x in 0..=(16 / 8) {
             for y in 0..=(16 / 4) {
@@ -88,6 +84,8 @@ impl Section {
             }
         }
 
+        let mut blox: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
+
         for x in 0..16 {
             let mut bloy = PartialArray::<[Block; 16], 16>::new();
 
@@ -97,7 +95,6 @@ impl Section {
                 for z in 0..16 {
                     let relative_pos = Vector3I::new(x as i32, y as i32, z as i32);
                     let actual_pos = starting + relative_pos;
-                    let block_pos = Vector3F::from(actual_pos);
 
                     let noise = {
                         let (x0, y0, z0) = (
@@ -129,7 +126,7 @@ impl Section {
                         lerp(lerp0, lerp1, w)
                     };
 
-                    let id = if noise + 64.0 - block_pos.y() as f64 > 0.0 {
+                    let id = if noise + 64.0 - actual_pos.y() as f64 > 0.0 {
                         1
                     } else {
                         0

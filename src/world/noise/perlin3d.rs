@@ -20,10 +20,20 @@ pub struct Perlin3D {
 
 impl Perlin3D {
     fn generate_noise(&mut self, pos: Vector3F) -> f64 {
-        //let random = self.rng.next_u64() as f64 / (1u64 << 54) as f64;
+        // for finding the point inside a cube (see `relative` below)
+        let round_down = |a, b| if a as f32 > b { 
+            b - (a - 1) as f32
+        } else {
+            b - a as f32
+        };
+
         let grid = Vector3I::from(pos);
         let cube = grid & 255;
-        let relative = Vector3D::from(pos) - Vector3D::from(grid);
+        let relative = Vector3D::new(
+            round_down(grid.x(), pos.x()) as f64,
+            round_down(grid.y(), pos.y()) as f64,
+            round_down(grid.z(), pos.z()) as f64,
+        );
 
         let weight_n = fade(relative.z());
         let weight_m = fade(relative.y());

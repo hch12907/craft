@@ -19,9 +19,19 @@ pub struct Perlin2D {
 
 impl Perlin2D {
     fn generate_noise(&mut self, pos: Vector2F) -> f64 {
+        // for finding the point inside a cube (see `relative` below)
+        let round_down = |a, b| if a as f32 > b { 
+            b - (a - 1) as f32
+        } else {
+            b - a as f32
+        };
+
         let grid = Vector2I::from(pos);
         let cube = grid & 255;
-        let relative = Vector2D::from(pos) - Vector2D::from(grid);
+        let relative = Vector2D::new(
+            round_down(grid.x(), pos.x()) as f64,
+            round_down(grid.y(), pos.y()) as f64,
+        );
 
         let weight_m = fade(relative.y());
         let weight_l = fade(relative.x());

@@ -34,9 +34,9 @@ fn main() {
                 let mut noise = world::Noise::<world::Perlin3D>::with_option(
                     world::NoiseGenOption::new()
                         .octaves(16)
-                        .amplitude(1.0)
+                        .amplitude(5.0)
                         .persistance(0.5)
-                        .frequency(314.159265)
+                        .frequency(628.318530)
                         .lacunarity(0.5),
                     ((x << 6) ^ (y + 123456)) as u64,
                 );
