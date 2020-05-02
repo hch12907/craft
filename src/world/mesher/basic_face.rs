@@ -13,12 +13,12 @@ impl<'a> BasicFaceMesher<'a> {
         
         for sec in 0..16 {
             let range = (0..16)
-                .flat_map(move |x| (0..16)
-                    .flat_map(move |y| (0..16)
-                        .map(move |z| (x, y, z))
+                .flat_map(move |y| (0..16)
+                    .flat_map(move |z| (0..16)
+                        .map(move |x| (y, z, x))
                 ));
             
-            for (x, y, z) in range {
+            for (y, z, x) in range {
                 let factor = 0.125;
 
                 let block = &self.chunk.sections[sec].blocks[x][y][z];

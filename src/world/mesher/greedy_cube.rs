@@ -101,30 +101,29 @@ impl<'a> GreedyCubeMesher<'a> {
             };
 
             let range = 
-            
-            (0..16)
-                .flat_map(move |x| (0..16)
-                    .map(move |y| (x, y)));
+                (0..16)
+                    .flat_map(move |y| (0..16)
+                        .map(move |z| (y, z)));
 
-            // initialization and a marking pass along z-axis
-            for (x, y) in range {
-                for z in (0..16).rev() {
+            // initialization and a marking pass along x-axis
+            for (y, z) in range {
+                for x in (0..16).rev() {
                     let block_id = blocks.iter().enumerate().rev().find(|b| {
-                        b.1 == &&sect[x][y][z]
+                        b.1 == &&sect[y][z][x]
                     });
 
                     let block_id = match block_id {
                         Some((i, _)) => i as u16,
                         None => {
-                            blocks.push(&sect[x][y][z]);
+                            blocks.push(&sect[y][z][x]);
                             (blocks.len() - 1) as u16
                         },
                     };
 
                     let mut group = GroupedBlock::new(block_id);
 
-                    if z + 1 < 16 {
-                        let b = unsafe { g[x * 256 + y * 16 + z + 1].get_mut() };
+                    if x + 1 < 16 {
+                        let b = unsafe { g[y * 256 + z * 16 + x + 1].get_mut() };
                         
                         let can_disable_face =
                             blocks[b.block_id()].id != 0 && 
@@ -134,18 +133,17 @@ impl<'a> GreedyCubeMesher<'a> {
                         let mut face2 = b.faces();
 
                         if b.block_id() == group.block_id() {
-                            group.extend_to(1, 1, 1 + b.extent().z() as usize);
+                            group.extend_to(1 + b.extent().x() as usize, 1, 1);
                             b.toggle_group();
                         } else if can_disable_face {
-                            face1.disable(Face::FRONT);
-                            face2.disable(Face::BACK);
-                            
+                            face1.disable(Face::RIGHT);
+                            face2.disable(Face::LEFT);
                             group.set_faces(face1);
                             b.set_faces(face2);
                         }
                     };
 
-                    g[x * 256 + y * 16 + z] = MaybeUninit::new(group);
+                    g[y * 256 + z * 16 + x] = MaybeUninit::new(group);
                 }
             };
 
@@ -154,13 +152,13 @@ impl<'a> GreedyCubeMesher<'a> {
             }
         };
 
-        // marking along y-axis
-        for x in 0..16 {
-            for y in (0..16).rev() {
-                for z in 0..16 {
-                    if y + 1 >= 16 { continue };
+        // marking along z-axis
+        for y in 0..16 {
+            for z in (0..16).rev() {
+                for x in 0..16 {
+                    if z + 1 >= 16 { continue };
         
-                    let idx = x * 256 + y * 16 + z;
+                    let idx = y * 256 + z * 16 + x;
                     let idx2 = idx + 16;
         
                     if groups[idx].is_in_group() {
@@ -170,22 +168,72 @@ impl<'a> GreedyCubeMesher<'a> {
                     let can_disable_face =
                         blocks[groups[idx].block_id()].id != 0 && 
                         blocks[groups[idx2].block_id()].id != 0 &&
-                        groups[idx2].extent().z() >= groups[idx].extent().z();
+                        groups[idx2].extent().x() >= groups[idx].extent().x();
 
                     if groups[idx2].is_in_group() {
                         if can_disable_face {
-                            let mut face1 = groups[idx].faces();
-                            let mut face2 = groups[idx2].faces();
-                            
-                            face1.disable(Face::TOP);
-                            face2.disable(Face::BOTTOM);
-                            groups[idx].set_faces(face1);
-                            groups[idx2].set_faces(face2);
+                            let mut face = groups[idx].faces();
+                            face.disable(Face::FRONT);
+                            groups[idx].set_faces(face);
                         }
                         continue
                     };
                     
-                    if groups[idx].extent().z() == groups[idx2].extent().z() {
+                    if groups[idx].extent().x() == groups[idx2].extent().x() {
+                        let mut face1 = groups[idx].faces();
+                        let mut face2 = groups[idx2].faces();
+
+                        if groups[idx].block_id() == groups[idx2].block_id() {
+                            groups[idx2].toggle_group();
+                            
+                            let orig_ext = groups[idx].extent();
+                            groups[idx].extend_to(
+                                orig_ext.x() as usize,
+                                orig_ext.y() as usize,
+                                (orig_ext.z() + groups[idx2].extent().z()) as usize,
+                            );
+                        } else if can_disable_face {
+                            face1.disable(Face::FRONT);
+                            face2.disable(Face::BACK);
+                            groups[idx].set_faces(face1);
+                            groups[idx2].set_faces(face2);
+                        }
+                    }
+                }
+            }
+        }
+
+        // marking along y-axis
+        for y in (0..16).rev() {
+            for z in 0..16 {
+                for x in 0..16 {
+                    if y + 1 >= 16 { continue };
+        
+                    let idx = y * 256 + z * 16 + x;
+                    let idx2 = idx + 256;
+        
+                    if groups[idx].is_in_group() {
+                        continue
+                    };
+
+                    let can_disable_face =
+                        blocks[groups[idx].block_id()].id != 0 && 
+                        blocks[groups[idx2].block_id()].id != 0 &&
+                        groups[idx2].extent().x() >= groups[idx].extent().x() &&
+                        groups[idx2].extent().z() >= groups[idx].extent().z();
+
+                    if groups[idx2].is_in_group() {
+                        if can_disable_face {
+                            let mut face = groups[idx].faces();
+                            face.disable(Face::TOP);
+                            groups[idx].set_faces(face);
+                        }
+                        continue
+                    };
+                    
+                    if groups[idx].extent().x() == groups[idx2].extent().x() &&
+                       groups[idx].extent().z() == groups[idx2].extent().z() 
+                    {
                         let mut face1 = groups[idx].faces();
                         let mut face2 = groups[idx2].faces();
 
@@ -210,64 +258,6 @@ impl<'a> GreedyCubeMesher<'a> {
             }
         }
 
-        // marking along x-axis
-        for x in (0..16).rev() {
-            for y in 0..16 {
-                for z in 0..16 {
-                    if x + 1 >= 16 { continue };
-        
-                    let idx = x * 256 + y * 16 + z;
-                    let idx2 = idx + 256;
-        
-                    if groups[idx].is_in_group() {
-                        continue
-                    };
-
-                    let can_disable_face =
-                        blocks[groups[idx].block_id()].id != 0 && 
-                        blocks[groups[idx2].block_id()].id != 0 &&
-                        groups[idx2].extent().y() >= groups[idx].extent().y() &&
-                        groups[idx2].extent().z() >= groups[idx].extent().z();
-
-                    if groups[idx2].is_in_group() {
-                        if can_disable_face {
-                            let mut face1 = groups[idx].faces();
-                            let mut face2 = groups[idx2].faces();
-                            
-                            face1.disable(Face::RIGHT);
-                            face2.disable(Face::LEFT);
-                            groups[idx].set_faces(face1);
-                            groups[idx2].set_faces(face2);
-                        }
-                        continue
-                    };
-                    
-                    if groups[idx].extent().y() == groups[idx2].extent().y() &&
-                       groups[idx].extent().z() == groups[idx2].extent().z()
-                    {
-                        let mut face1 = groups[idx].faces();
-                        let mut face2 = groups[idx2].faces();
-
-                        if groups[idx].block_id() == groups[idx2].block_id() {
-                            groups[idx2].toggle_group();
-                            
-                            let orig_ext = groups[idx].extent();
-                            groups[idx].extend_to(
-                                (orig_ext.x() + groups[idx2].extent().x()) as usize,
-                                orig_ext.y() as usize,
-                                orig_ext.z() as usize,
-                            );
-                        } else if can_disable_face {
-                            face1.disable(Face::RIGHT);
-                            face2.disable(Face::LEFT);
-                            groups[idx].set_faces(face1);
-                            groups[idx2].set_faces(face2);
-                        }
-                    }
-                }
-            }
-        }
-
         let mut mb = MeshBuilder::new();
         
         for (pos, grp) in groups.iter().enumerate() {
@@ -279,9 +269,9 @@ impl<'a> GreedyCubeMesher<'a> {
                 continue
             };
 
-            let x = ((pos >> 8) & 0xF) as i32;
-            let y = ((pos >> 4) & 0xF) as i32;
-            let z = ((pos >> 0) & 0xF) as i32;
+            let y = ((pos >> 8) & 0xF) as i32;
+            let z = ((pos >> 4) & 0xF) as i32;
+            let x = ((pos >> 0) & 0xF) as i32;
             let extent = Vector3F::from(grp.extent());
             let origin = Vector3I::new(x, y, z) + block_pos;
 

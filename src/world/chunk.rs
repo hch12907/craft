@@ -71,9 +71,9 @@ impl Section {
         let starting = pos * 16;
 
         let mut noises = [[[0.0; 3]; 5]; 3];
-        for x in 0..=(16 / 8) {
-            for y in 0..=(16 / 4) {
-                for z in 0..=(16 / 8) {
+        for y in 0..=(16 / 4) {
+            for z in 0..=(16 / 8) {
+                for x in 0..=(16 / 8) {
                     let relative_pos = Vector3I::new(x * 8, y * 4, z * 8);
                     let actual_pos = starting + relative_pos;
                     let block_pos = Vector3F::from(actual_pos);
@@ -84,15 +84,15 @@ impl Section {
             }
         }
 
-        let mut blox: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
+        let mut bloy: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
 
-        for x in 0..16 {
-            let mut bloy = PartialArray::<[Block; 16], 16>::new();
+        for y in 0..16 {
+            let mut blox = PartialArray::<[Block; 16], 16>::new();
 
-            for y in 0..16 {
+            for z in 0..16 {
                 let mut bloz = PartialArray::<Block, 16>::new();
 
-                for z in 0..16 {
+                for x in 0..16 {
                     let relative_pos = Vector3I::new(x as i32, y as i32, z as i32);
                     let actual_pos = starting + relative_pos;
 
@@ -135,17 +135,17 @@ impl Section {
                     bloz.push(Block::new(id)).unwrap();
                 }
 
-                bloy.push(bloz.into_full_array().unwrap()).unwrap();
+                blox.push(bloz.into_full_array().unwrap()).unwrap();
             }
 
-            blox.push(bloy.into_full_array().unwrap());
+            bloy.push(blox.into_full_array().unwrap());
         }
 
         // Convert Vec<[[Block; 16]; 16]> into Box<[[[Block; 16]; 16]; 16]>
         blocks = unsafe {
-            let mut blox = std::mem::ManuallyDrop::new(blox);
-            assert!(blox.len() == 16, "a chunk should have 16 sections");
-            let ptr = blox.as_mut_ptr() as *mut [[[Block; 16]; 16]; 16];
+            let mut bloy = std::mem::ManuallyDrop::new(bloy);
+            assert!(bloy.len() == 16, "a chunk should have 16 sections");
+            let ptr = bloy.as_mut_ptr() as *mut [[[Block; 16]; 16]; 16];
             Box::from_raw(ptr)
         };
 
