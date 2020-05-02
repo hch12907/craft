@@ -19,9 +19,9 @@ impl<'a> BasicFaceMesher<'a> {
                 ));
             
             for (y, z, x) in range {
-                let factor = 0.125;
+                let factor = 0.25;
 
-                let block = &self.chunk.sections[sec].blocks[x][y][z];
+                let block = &self.chunk.sections[sec].blocks[y][z][x];
 
                 // Otherwise debug builds will panic with integer underflow.
                 let px = x + 1;
@@ -31,12 +31,12 @@ impl<'a> BasicFaceMesher<'a> {
                 let pz = z + 1;
                 let mz = z.wrapping_sub(1);
                 
-                let block_left   = self.chunk.sections[sec].blocks.get(px).map(|b| &b[y][z]);
-                let block_right  = self.chunk.sections[sec].blocks.get(mx).map(|b| &b[y][z]);
-                let block_top    = self.chunk.sections[sec].blocks[x].get(py).map(|b| &b[z]);
-                let block_bottom = self.chunk.sections[sec].blocks[x].get(my).map(|b| &b[z]);
-                let block_front  = self.chunk.sections[sec].blocks[x][y].get(pz);
-                let block_back   = self.chunk.sections[sec].blocks[x][y].get(mz);
+                let block_top    = self.chunk.sections[sec].blocks.get(py).map(|b| &b[z][x]);
+                let block_bottom = self.chunk.sections[sec].blocks.get(my).map(|b| &b[z][x]);
+                let block_front  = self.chunk.sections[sec].blocks[y].get(pz).map(|b| &b[x]);
+                let block_back   = self.chunk.sections[sec].blocks[y].get(mz).map(|b| &b[x]);
+                let block_right    = self.chunk.sections[sec].blocks[y][z].get(px);
+                let block_left     = self.chunk.sections[sec].blocks[y][z].get(mx);
 
                 let (x, y, z, sec) = (x as i32, y as i32, z as i32, sec as i32);
 
@@ -44,7 +44,7 @@ impl<'a> BasicFaceMesher<'a> {
                     x + self.chunk.position().x() * 16,
                     y + sec * 16, 
                     z + self.chunk.position().y() * 16
-                ) + Vector3I::new(0, 0 * -128, 0);
+                );
 
                 let origin = Vector3F::from(pos) * factor;
 
