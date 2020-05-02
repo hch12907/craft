@@ -30,10 +30,9 @@ impl MeshBuilder {
         let halved = length * 0.5;
         let create_vertex = |x, y, z, lighting| {
             let color = {
-                let origin = origin * 0.026315; // (1 / 38.0)
-                let (x, y, z) = (origin.x(), origin.y(), origin.z());
-                //let (x, y, z): (f32, f32, f32) = (random(), random(), random());
-                RGBA::new(0.8 * ( 0.6 * x.abs() + 0.4 * y.abs()), 1.0 - 1.1 * y.abs(), 1.1 * z.abs(), 1.0)
+                //let origin = origin * 0.026315; // (1 / 38.0)
+                //let (x, y, z) = (origin.x(), origin.y(), origin.z());
+                RGBA::new(0.9, 0.9, 0.9, 1.0)
             };
 
             Vertex::new(
@@ -46,10 +45,10 @@ impl MeshBuilder {
 
         let mut add_face = |indices: [usize; 6], light| {
             for &index in indices.iter() {
-                //let index = (index << 3) + light as usize;
+                let index = (index << 3) + light as usize;
 
                 if mapped_indices[index] == std::u32::MAX {
-                    let vertex = match index /* index >> 3 */ {
+                    let vertex = match index >> 3 {
                         0 => create_vertex(-halved.x(), -halved.y(), -halved.z(), light), // index 0
                         1 => create_vertex(-halved.x(),  halved.y(), -halved.z(), light), // index 1
                         2 => create_vertex( halved.x(),  halved.y(), -halved.z(), light), // index 2
@@ -79,7 +78,7 @@ impl MeshBuilder {
         ];
 
         if faces.intersects(Face::BACK) {
-            add_face([4, 7, 5, 7, 6, 5], LIGHTING[0]);
+            add_face([3, 0, 1, 2, 3, 1], LIGHTING[0]);
         };
 
         if faces.intersects(Face::RIGHT) {
@@ -91,7 +90,7 @@ impl MeshBuilder {
         }
 
         if faces.intersects(Face::FRONT) {
-            add_face([3, 0, 1, 2, 3, 1], LIGHTING[3]);
+            add_face([4, 7, 5, 7, 6, 5], LIGHTING[3]);
         }
 
         if faces.intersects(Face::LEFT) {
