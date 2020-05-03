@@ -4,8 +4,7 @@ use crate::mesh::*;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block {
     pub metadata: u16,
-    pub packed_data: u16, // TODO: decide packed data
-    pub id: u32,
+    pub id: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -14,11 +13,10 @@ pub struct BlockModel {
 }
 
 impl Block {
-    pub fn new(id: u32) -> Self {
+    pub fn new(id: u16) -> Self {
         Self {
             id,
             metadata: 0,
-            packed_data: 0,
         }
     }
 }
