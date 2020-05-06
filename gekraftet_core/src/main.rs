@@ -19,7 +19,7 @@ use windowing::*;
 fn main() {
     let w = windowing::Window::create_window();
     let mut r = renderer::GlRenderer::new(&w, 
-        maths::Matrix4::perspective(maths::Deg(55.0), 16.0/9.0, 0.1, 200.0)
+        maths::Matrix4::perspective(maths::Deg(55.0), 16.0/9.0, 0.1, 500.0)
     );
 
     let (tx, rx) = std::sync::mpsc::channel::<(i32, i32, mesh::Mesh)>();

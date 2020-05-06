@@ -1,13 +1,6 @@
-[package]
-name = "gekraftet"
-version = "0.1.0"
-authors = ["Hoe Hao Cheng <haochengho12907@gmail.com>"]
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-glutin = "0.24.0"
-gl = "0.14.0"
-rand = "0.7.3"
-rand_distr = "0.2.2"
+[workspace]
+members = [
+    "gekraftet_client",
+    "gekraftet_core",
+    "gekraftet_server",
+]

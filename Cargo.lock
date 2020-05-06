@@ -209,7 +209,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 
 [[package]]
-name = "gekraftet"
+name = "gekraftet_client"
+version = "0.1.0"
+
+[[package]]
+name = "gekraftet_core"
 version = "0.1.0"
 dependencies = [
  "gl",
@@ -217,6 +221,10 @@ dependencies = [
  "rand",
  "rand_distr",
 ]
+
+[[package]]
+name = "gekraftet_server"
+version = "0.1.0"
 
 [[package]]
 name = "getrandom"
