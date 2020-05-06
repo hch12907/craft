@@ -1,4 +1,4 @@
-use crate::maths::*;
+use gekraftet_core::maths::*;
 
 pub struct Camera {
     position: Vector3F,

@@ -1,7 +1,7 @@
-use crate::maths::{ Vector3I, Vector3F };
+use gekraftet_core::maths::{ Vector3I, Vector3F };
+use gekraftet_core::world::{ Chunk, Section };
+use gekraftet_core::utils::PartialArray;
 use crate::mesh::{ Face, Mesh, MeshBuilder };
-use crate::utils::PartialArray;
-use crate::world::{ Chunk, Section };
 use super::Mesher;
 
 pub struct GreedyCubeMesher<'a> {

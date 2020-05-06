@@ -1,6 +1,6 @@
-use crate::maths::{ Vector3I, Vector3F };
+use gekraftet_core::maths::{ Vector3I, Vector3F };
+use gekraftet_core::world::Chunk;
 use crate::mesh::{ Face, Mesh, MeshBuilder };
-use crate::world::Chunk;
 use super::Mesher;
 
 pub struct BasicFaceMesher<'a> {
@@ -11,7 +11,7 @@ impl<'a> BasicFaceMesher<'a> {
     fn intrasection_cull(&self) -> Mesh {
         let mut mb = MeshBuilder::new();
         
-        for sec in 0..16 {
+        for (i, sec) in self.chunk.sections().iter().enumerate() {
             let range = (0..16)
                 .flat_map(move |y| (0..16)
                     .flat_map(move |z| (0..16)
@@ -21,7 +21,7 @@ impl<'a> BasicFaceMesher<'a> {
             for (y, z, x) in range {
                 let factor = 0.25;
 
-                let block = &self.chunk.sections[sec].blocks[y][z][x];
+                let block = &sec[y][z][x];
 
                 // Otherwise debug builds will panic with integer underflow.
                 let px = x + 1;
@@ -31,18 +31,18 @@ impl<'a> BasicFaceMesher<'a> {
                 let pz = z + 1;
                 let mz = z.wrapping_sub(1);
                 
-                let block_top    = self.chunk.sections[sec].blocks.get(py).map(|b| &b[z][x]);
-                let block_bottom = self.chunk.sections[sec].blocks.get(my).map(|b| &b[z][x]);
-                let block_front  = self.chunk.sections[sec].blocks[y].get(pz).map(|b| &b[x]);
-                let block_back   = self.chunk.sections[sec].blocks[y].get(mz).map(|b| &b[x]);
-                let block_right    = self.chunk.sections[sec].blocks[y][z].get(px);
-                let block_left     = self.chunk.sections[sec].blocks[y][z].get(mx);
+                let block_top    = sec.get(py).map(|b| &b[z][x]);
+                let block_bottom = sec.get(my).map(|b| &b[z][x]);
+                let block_front  = sec[y].get(pz).map(|b| &b[x]);
+                let block_back   = sec[y].get(mz).map(|b| &b[x]);
+                let block_right  = sec[y][z].get(px);
+                let block_left   = sec[y][z].get(mx);
 
-                let (x, y, z, sec) = (x as i32, y as i32, z as i32, sec as i32);
+                let (x, y, z) = (x as i32, y as i32, z as i32);
 
                 let pos = Vector3I::new(
                     x + self.chunk.position().x() * 16,
-                    y + sec * 16, 
+                    y + i as i32 * 16, 
                     z + self.chunk.position().y() * 16
                 );
 

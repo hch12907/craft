@@ -2,13 +2,13 @@ mod errors;
 mod shader;
 mod uniform;
 
+use crate::windowing::Window;
+use crate::mesh::Mesh;
 use gl::types::*;
+use shader::{ Linked, ShaderProgram };
+use gekraftet_core::maths::Matrix4;
 use std::ptr;
 
-use crate::maths::Matrix4;
-use crate::mesh::Mesh;
-use crate::windowing::Window;
-use shader::{ Linked, ShaderProgram };
 pub use errors::RenderError;
 
 pub struct GlRenderer {
@@ -81,7 +81,7 @@ impl GlRenderer {
 
     pub fn render(&self, time: f32, view: Matrix4) {
         unsafe {
-            use crate::maths;
+            use gekraftet_core::maths;
 
             let model = maths::Matrix4::scale(1.0);
 

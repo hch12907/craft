@@ -1,7 +1,5 @@
 use std::mem::MaybeUninit;
 use std::ops::Deref;
-
-use crate::mesh::Mesh;
 use crate::maths::{ Vector3F, Vector3I };
 use crate::utils::{ lerp, PartialArray };
 use super::*;
@@ -41,11 +39,6 @@ impl Chunk {
 
     pub fn position(&self) -> ChunkPos {
         self.position
-    }
-
-    pub fn generate_mesh<'a, M: Mesher<'a>>(&'a self) -> Mesh {
-        let mesher = M::from_chunk(self);
-        mesher.generate_mesh()
     }
 
     pub fn sections(&self) -> &[Section] {

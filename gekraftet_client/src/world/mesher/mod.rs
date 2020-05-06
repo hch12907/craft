@@ -2,7 +2,7 @@ mod basic_face;
 mod greedy_cube;
 
 use crate::mesh::Mesh;
-use crate::world::Chunk;
+use gekraftet_core::world::Chunk;
 
 pub use basic_face::BasicFaceMesher;
 pub use greedy_cube::GreedyCubeMesher;

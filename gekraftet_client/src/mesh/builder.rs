@@ -1,4 +1,4 @@
-use crate::maths::*;
+use gekraftet_core::maths::*;
 use super::{ Face, Mesh, Texture, Vertex };
 //use rand::random;
 

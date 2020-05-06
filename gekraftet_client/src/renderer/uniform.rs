@@ -3,7 +3,7 @@ use gl;
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 
-use crate::maths::*;
+use gekraftet_core::maths::*;
 use super::shader::*;
 
 // A handy alias for cutting down signature length

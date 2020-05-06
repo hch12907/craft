@@ -1,4 +1,4 @@
-use crate::maths::*;
+use gekraftet_core::maths::*;
 
 #[derive(Clone, Debug)]
 pub struct Vertex {
