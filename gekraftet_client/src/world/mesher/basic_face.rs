@@ -42,8 +42,8 @@ impl<'a> BasicFaceMesher<'a> {
 
                 let pos = Vector3I::new(
                     x + self.chunk.position().x() * 16,
-                    y + i as i32 * 16, 
-                    z + self.chunk.position().y() * 16
+                    y + self.chunk.position().y() * 256 + i as i32 * 16, 
+                    z + self.chunk.position().z() * 16
                 );
 
                 let origin = Vector3F::from(pos) * factor;

@@ -1,5 +1,5 @@
 use gekraftet_core::maths::{ Vector3I, Vector3F };
-use gekraftet_core::world::{ Chunk, Section };
+use gekraftet_core::world::{ Chunk, Section, SectionPos };
 use gekraftet_core::utils::PartialArray;
 use crate::mesh::{ Face, Mesh, MeshBuilder };
 use super::Mesher;
@@ -85,13 +85,11 @@ impl GroupedBlock {
 impl<'a> GreedyCubeMesher<'a> {
     fn intrasection_cull(
         &self,
-        sect_y: usize,
-        sect: &Section,
+        section_pos: SectionPos,
+        section: &Section,
     ) -> Mesh 
     {
-        let chunk_pos = self.chunk.position().0;
-        let sect_pos = Vector3I::new(chunk_pos.x(), sect_y as i32, chunk_pos.y());
-        let block_pos = sect_pos * 16;
+        let block_pos = *section_pos * 16;
 
         let mut blocks = Vec::with_capacity(16);
         let mut groups: [GroupedBlock; 4096] = {
@@ -106,13 +104,13 @@ impl<'a> GreedyCubeMesher<'a> {
             for (y, z) in range {
                 for x in 0..16 {
                     let block_id = blocks.iter().enumerate().rev().find(|b| {
-                        b.1 == &&sect[y][z][x]
+                        b.1 == &&section[y][z][x]
                     });
 
                     let block_id = match block_id {
                         Some((i, _)) => i as u16,
                         None => {
-                            blocks.push(&sect[y][z][x]);
+                            blocks.push(&section[y][z][x]);
                             (blocks.len() - 1) as u16
                         },
                     };
@@ -293,7 +291,12 @@ impl<'a> Mesher<'a> for GreedyCubeMesher<'a> {
     fn generate_mesh(&self) -> Mesh {
         let mut meshes = MeshBuilder::new();
         for (i, sect) in self.chunk.sections().iter().enumerate() {
-            meshes = meshes.add_mesh(self.intrasection_cull(i, sect));
+            let sect_pos = SectionPos::new(
+                self.chunk.position().x(),
+                self.chunk.position().y() + i as i32,
+                self.chunk.position().z(),
+            );
+            meshes = meshes.add_mesh(self.intrasection_cull(sect_pos, sect));
         };
         meshes.build()
     }

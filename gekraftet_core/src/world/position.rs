@@ -5,7 +5,7 @@ use crate::maths::{ Vector2I, Vector3I };
 pub struct BlockPos(pub Vector3I);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ChunkPos(pub Vector2I);
+pub struct ChunkPos(pub Vector3I);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SectionPos(pub Vector3I);
@@ -13,8 +13,9 @@ pub struct SectionPos(pub Vector3I);
 impl From<BlockPos> for ChunkPos {
     fn from(b: BlockPos) -> Self {
         let x = (b.0).x() / 16;
+        let y = (b.0).y() / 256;
         let z = (b.0).z() / 16;
-        Self(Vector2I::new(x, z))
+        Self(Vector3I::new(x, y, z))
     }
 }
 
@@ -27,8 +28,9 @@ impl From<BlockPos> for SectionPos {
 impl From<SectionPos> for ChunkPos {
     fn from(s: SectionPos) -> Self {
         let x = s.0.x();
+        let y = s.0.y() / 16;
         let z = s.0.z();
-        Self(Vector2I::new(x, z))
+        Self(Vector3I::new(x, y, z))
     }
 }
 
@@ -38,8 +40,8 @@ impl From<Vector3I> for BlockPos {
     }
 }
 
-impl From<Vector2I> for ChunkPos {
-    fn from(s: Vector2I) -> Self {
+impl From<Vector3I> for ChunkPos {
+    fn from(s: Vector3I) -> Self {
         Self(s)
     }
 }
@@ -57,8 +59,8 @@ impl BlockPos {
 }
 
 impl ChunkPos {
-    pub fn new(x: i32, z: i32) -> Self {
-        Self(Vector2I::new(x, z))
+    pub fn new(x: i32, y: i32, z: i32) -> Self {
+        Self(Vector3I::new(x, y, z))
     }
 }
 
@@ -83,7 +85,7 @@ impl DerefMut for BlockPos {
 }
 
 impl Deref for ChunkPos {
-    type Target = Vector2I;
+    type Target = Vector3I;
 
     fn deref(&self) -> &Self::Target {
         &self.0

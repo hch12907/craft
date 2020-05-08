@@ -27,7 +27,7 @@ impl Chunk {
 
         for i in 0..16 {
             let ChunkPos(pos) = at;
-            let sect = SectionPos::new(pos.x(), i, pos.y());
+            let sect = SectionPos::new(pos.x(), pos.y() * 16 + i, pos.z());
             sections.push(Section::new(sect, noise)).unwrap();
         };
 

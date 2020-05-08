@@ -22,7 +22,7 @@ fn main() {
     );
 
     let (tx, rx) = std::sync::mpsc::channel::<(i32, i32, mesh::Mesh)>();
-    let (bound0, bound1) = (-4, 4);
+    let (bound0, bound1) = (-32, 32);
 
     let world_minister = std::thread::spawn(move || {
         let tx = tx;
@@ -41,7 +41,7 @@ fn main() {
                 );
 
                 std::thread::spawn(move || {
-                    let pos = Vector2I::new(x, y);
+                    let pos = Vector3I::new(x, 0, y);
                     let chunk = Chunk::new(pos, &mut noise);
                     let mesher = world::GreedyCubeMesher::from_chunk(&chunk);
                     let mesh = mesher.generate_mesh();
