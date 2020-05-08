@@ -1,4 +1,3 @@
-use std::mem::MaybeUninit;
 use std::ops::Deref;
 use crate::maths::{ Vector3F, Vector3I };
 use crate::utils::{ lerp, PartialArray };
@@ -7,12 +6,12 @@ use super::*;
 #[derive(Clone, Debug)]
 pub struct Chunk {
     position: ChunkPos,
-    pub(in crate::world) sections: [Section; 16], 
+    sections: [Section; CHUNK_LENGTH_Y / SECTION_LENGTH_Y], 
 }
 
 #[derive(Clone, Debug)]
 pub struct Section {
-    pub(in crate::world) blocks: Box<[[[Block; 16]; 16]; 16]>,
+    blocks: Box<[[[Block; SECTION_LENGTH_Y]; SECTION_LENGTH_X]; SECTION_LENGTH_Z]>,
 }
 
 impl Chunk {
@@ -25,7 +24,7 @@ impl Chunk {
         // Avoid unnecessary copies with MaybeUninit
         let mut sections = PartialArray::<Section, 16>::new();
 
-        for i in 0..16 {
+        for i in 0..(CHUNK_LENGTH_Y / SECTION_LENGTH_Y) as i32 {
             let ChunkPos(pos) = at;
             let sect = SectionPos::new(pos.x(), pos.y() * 16 + i, pos.z());
             sections.push(Section::new(sect, noise)).unwrap();
@@ -47,7 +46,7 @@ impl Chunk {
 }
 
 impl Deref for Section {
-    type Target = [[[Block; 16]; 16]; 16];
+    type Target = [[[Block; SECTION_LENGTH_Y]; SECTION_LENGTH_Z]; SECTION_LENGTH_X];
 
     fn deref(&self) -> &Self::Target {
         &self.blocks
@@ -58,18 +57,21 @@ impl Section {
     pub fn new<G>(at: SectionPos, noise: &mut Noise<G>) -> Self 
         where G: NoiseGen
     {
-        let blocks: Box<[[[Block; 16]; 16]; 16]>;
-
         let SectionPos(pos) = at;
-        let starting = pos * 16;
+        let starting = pos * SECTION_LENGTH_X as i32;
 
-        let mut noises = [[[0.0; 3]; 5]; 3];
-        for y in 0..=(16 / 4) {
-            for z in 0..=(16 / 8) {
-                for x in 0..=(16 / 8) {
-                    let relative_pos = Vector3I::new(x * 8, y * 4, z * 8);
-                    let actual_pos = starting + relative_pos;
-                    let block_pos = Vector3F::from(actual_pos);
+        let mut noises = [[[0.0; NOISE_SAMPLES_X + 1]; NOISE_SAMPLES_Y + 1]; NOISE_SAMPLES_Z + 1];
+        
+        for y in 0..=NOISE_SAMPLES_Y as i32 {
+            for z in 0..=NOISE_SAMPLES_Z as i32 {
+                for x in 0..=NOISE_SAMPLES_X as i32 {
+                    let relative_pos = Vector3I::new(
+                        x * NOISE_FACTOR_X as i32,
+                        y * NOISE_FACTOR_Y as i32,
+                        z * NOISE_FACTOR_Z as i32
+                    );
+
+                    let block_pos = Vector3F::from(starting + relative_pos);
                     let noise = noise.generate_noise(block_pos);
                     let (x, y, z) = (x as usize, y as usize, z as usize);
                     noises[x][y][z] = noise;
@@ -77,23 +79,23 @@ impl Section {
             }
         }
 
-        let mut bloy: Vec<[[Block; 16]; 16]> = Vec::with_capacity(16);
+        let mut bloy: Vec<[[Block; SECTION_LENGTH_X]; SECTION_LENGTH_Z]> = Vec::with_capacity(SECTION_LENGTH_Y);
 
-        for y in 0..16 {
-            let mut blox = PartialArray::<[Block; 16], 16>::new();
+        for y in 0..SECTION_LENGTH_Y {
+            let mut blox = PartialArray::<[Block; SECTION_LENGTH_X], SECTION_LENGTH_Z>::new();
 
-            for z in 0..16 {
-                let mut bloz = PartialArray::<Block, 16>::new();
+            for z in 0..SECTION_LENGTH_Z {
+                let mut bloz = PartialArray::<Block, SECTION_LENGTH_X>::new();
 
-                for x in 0..16 {
+                for x in 0..SECTION_LENGTH_X {
                     let relative_pos = Vector3I::new(x as i32, y as i32, z as i32);
                     let actual_pos = starting + relative_pos;
 
                     let noise = {
                         let (x0, y0, z0) = (
-                            x / 8 as usize, 
-                            y / 4 as usize, 
-                            z / 8 as usize
+                            x / NOISE_FACTOR_X as usize, 
+                            y / NOISE_FACTOR_Z as usize, 
+                            z / NOISE_FACTOR_Z as usize
                         );
 
                         let (x1, y1, z1) = (
@@ -103,9 +105,9 @@ impl Section {
                         );
                         
                         let (u, v, w) = (
-                            (x & 7) as f64 / 8.0, 
-                            (y & 3) as f64 / 4.0, 
-                            (z & 7) as f64 / 8.0
+                            (x % NOISE_FACTOR_X) as f64 / NOISE_FACTOR_X as f64, 
+                            (y % NOISE_FACTOR_Y) as f64 / NOISE_FACTOR_Y as f64, 
+                            (z % NOISE_FACTOR_Z) as f64 / NOISE_FACTOR_Z as f64
                         );
 
                         let lerp00 = lerp(noises[x0][y0][z0], noises[x1][y0][z0], u);
@@ -135,10 +137,14 @@ impl Section {
         }
 
         // Convert Vec<[[Block; 16]; 16]> into Box<[[[Block; 16]; 16]; 16]>
-        blocks = unsafe {
+        let blocks = unsafe {
             let mut bloy = std::mem::ManuallyDrop::new(bloy);
-            assert!(bloy.len() == 16, "a chunk should have 16 sections");
-            let ptr = bloy.as_mut_ptr() as *mut [[[Block; 16]; 16]; 16];
+            assert!(
+                bloy.len() == CHUNK_LENGTH_Y / SECTION_LENGTH_Y, 
+                "a chunk should have {} sections",
+                CHUNK_LENGTH_Y / SECTION_LENGTH_Y
+            );
+            let ptr = bloy.as_mut_ptr() as *mut _;
             Box::from_raw(ptr)
         };
 

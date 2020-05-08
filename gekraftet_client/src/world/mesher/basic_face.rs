@@ -1,7 +1,7 @@
 use gekraftet_core::maths::{ Vector3I, Vector3F };
-use gekraftet_core::world::Chunk;
+use gekraftet_core::world::{ self, Chunk };
 use crate::mesh::{ Face, Mesh, MeshBuilder };
-use super::Mesher;
+use super::{ Mesher, BLOCK_LENGTH };
 
 pub struct BasicFaceMesher<'a> {
     chunk: &'a Chunk,
@@ -12,15 +12,13 @@ impl<'a> BasicFaceMesher<'a> {
         let mut mb = MeshBuilder::new();
         
         for (i, sec) in self.chunk.sections().iter().enumerate() {
-            let range = (0..16)
-                .flat_map(move |y| (0..16)
-                    .flat_map(move |z| (0..16)
+            let range = (0..world::SECTION_LENGTH_Y)
+                .flat_map(move |y| (0..world::SECTION_LENGTH_Z)
+                    .flat_map(move |z| (0..world::SECTION_LENGTH_X)
                         .map(move |x| (y, z, x))
                 ));
             
             for (y, z, x) in range {
-                let factor = 0.25;
-
                 let block = &sec[y][z][x];
 
                 // Otherwise debug builds will panic with integer underflow.
@@ -41,12 +39,12 @@ impl<'a> BasicFaceMesher<'a> {
                 let (x, y, z) = (x as i32, y as i32, z as i32);
 
                 let pos = Vector3I::new(
-                    x + self.chunk.position().x() * 16,
-                    y + self.chunk.position().y() * 256 + i as i32 * 16, 
-                    z + self.chunk.position().z() * 16
+                    x + self.chunk.position().x() * world::CHUNK_LENGTH_X as i32,
+                    y + self.chunk.position().y() * world::CHUNK_LENGTH_Y as i32 + (i * world::SECTION_LENGTH_X) as i32,
+                    z + self.chunk.position().z() * world::CHUNK_LENGTH_Z as i32
                 );
 
-                let origin = Vector3F::from(pos) * factor;
+                let origin = Vector3F::from(pos) * BLOCK_LENGTH;
 
                 // basic culling
                 let mut faces = Face::all();
@@ -58,7 +56,7 @@ impl<'a> BasicFaceMesher<'a> {
                 if block_back.map_or(false, |b| b.id > 0) { faces.disable(Face::BACK) };
 
                 if block.id > 0 {
-                    mb = mb.add_mesh(MeshBuilder::create_cube(factor, origin, faces));
+                    mb = mb.add_mesh(MeshBuilder::create_cube(BLOCK_LENGTH, origin, faces));
                 }
             };
         }

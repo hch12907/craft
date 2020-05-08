@@ -1,8 +1,8 @@
 use gekraftet_core::maths::{ Vector3I, Vector3F };
-use gekraftet_core::world::{ Chunk, Section, SectionPos };
+use gekraftet_core::world::{ self, Chunk, Section, SectionPos };
 use gekraftet_core::utils::PartialArray;
 use crate::mesh::{ Face, Mesh, MeshBuilder };
-use super::Mesher;
+use super::{ Mesher, BLOCK_LENGTH };
 
 pub struct GreedyCubeMesher<'a> {
     chunk: &'a Chunk,
@@ -269,8 +269,8 @@ impl<'a> GreedyCubeMesher<'a> {
             let origin = Vector3I::new(x, y, z) + block_pos - grp.extent();
 
             let mesh = MeshBuilder::create_cuboid(
-                extent * 0.25, 
-                (Vector3F::from(origin) + 0.5 * extent) * 0.25,
+                extent * BLOCK_LENGTH, 
+                (Vector3F::from(origin) + 0.5 * extent) * BLOCK_LENGTH,
                 grp.faces()
             );
             
@@ -283,6 +283,13 @@ impl<'a> GreedyCubeMesher<'a> {
 
 impl<'a> Mesher<'a> for GreedyCubeMesher<'a> {
     fn from_chunk(chunk: &'a Chunk) -> Self {
+        assert!(
+            world::SECTION_LENGTH_X <= 16
+            && world::SECTION_LENGTH_Y <= 16
+            && world::SECTION_LENGTH_Z <= 16,
+            "GreedyCubeMesher is designed for sections that are 16x16x16 blocks"
+        );
+
         Self {
             chunk
         }
