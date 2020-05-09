@@ -10,7 +10,7 @@ layout(location = 1) in vec4 color;
 layout(location = 2) in vec2 uv;
 
 out vec4 frag_color_vs;
-out float frag_color_mod;
+flat out float frag_color_mod;
 
 void main() {
     frag_color_vs = color;

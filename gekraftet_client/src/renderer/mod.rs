@@ -85,7 +85,7 @@ impl GlRenderer {
 
             let model = maths::Matrix4::scale(1.0);
 
-            //gl::ProvokingVertex(gl::LAST_VERTEX_CONVENTION);
+            gl::ProvokingVertex(gl::LAST_VERTEX_CONVENTION);
 
             for p in &self.programs {
                 p.use_program();

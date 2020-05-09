@@ -2,6 +2,26 @@ use gekraftet_core::maths::*;
 use super::{ Face, Mesh, Texture, Vertex };
 //use rand::random;
 
+const LIGHTING: [u32; 6] = [
+    3, // back
+    4, // right
+    5, // top
+    3, // front
+    4, // left
+    1, // bottom
+];
+
+const LIGHTING_VERT: [u32; 8] = [
+    LIGHTING[0],
+    LIGHTING[4],
+    LIGHTING[1],
+    LIGHTING[3],
+    LIGHTING[5],
+    LIGHTING[3],
+    LIGHTING[2],
+    5, // 8th vert is not involved in lighting
+];
+
 pub struct MeshBuilder {
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
@@ -43,20 +63,18 @@ impl MeshBuilder {
             )
         };
 
-        let mut add_face = |indices: [usize; 6], light| {
+        let mut add_face = |indices: [usize; 6]| {
             for &index in indices.iter() {
-                let index = (index << 3) + light as usize;
-
                 if mapped_indices[index] == std::u32::MAX {
-                    let vertex = match index >> 3 {
-                        0 => create_vertex(-halved.x(), -halved.y(), -halved.z(), light), // index 0
-                        1 => create_vertex(-halved.x(),  halved.y(), -halved.z(), light), // index 1
-                        2 => create_vertex( halved.x(),  halved.y(), -halved.z(), light), // index 2
-                        3 => create_vertex( halved.x(), -halved.y(), -halved.z(), light), // index 3
-                        4 => create_vertex(-halved.x(), -halved.y(),  halved.z(), light), // index 4
-                        5 => create_vertex(-halved.x(),  halved.y(),  halved.z(), light), // index 5
-                        6 => create_vertex( halved.x(),  halved.y(),  halved.z(), light), // index 6
-                        7 => create_vertex( halved.x(), -halved.y(),  halved.z(), light), // index 7
+                    let vertex = match index {
+                        0 => create_vertex(-halved.x(), -halved.y(), -halved.z(), LIGHTING_VERT[0]), // index 0
+                        1 => create_vertex(-halved.x(),  halved.y(), -halved.z(), LIGHTING_VERT[1]), // index 1
+                        2 => create_vertex( halved.x(),  halved.y(), -halved.z(), LIGHTING_VERT[2]), // index 2
+                        3 => create_vertex( halved.x(), -halved.y(), -halved.z(), LIGHTING_VERT[3]), // index 3
+                        4 => create_vertex(-halved.x(), -halved.y(),  halved.z(), LIGHTING_VERT[4]), // index 4
+                        5 => create_vertex(-halved.x(),  halved.y(),  halved.z(), LIGHTING_VERT[5]), // index 5
+                        6 => create_vertex( halved.x(),  halved.y(),  halved.z(), LIGHTING_VERT[6]), // index 6
+                        7 => create_vertex( halved.x(), -halved.y(),  halved.z(), LIGHTING_VERT[7]), // index 7
                         _ => unreachable!(),
                     };
                     actual_indices.push(added_vertices.len() as u32);
@@ -68,37 +86,28 @@ impl MeshBuilder {
             }
         };
 
-        const LIGHTING: [u32; 6] = [
-            3, // back
-            4, // right
-            5, // top
-            3, // front
-            4, // left
-            1, // bottom
-        ];
-
         if faces.intersects(Face::BACK) {
-            add_face([3, 0, 1, 2, 3, 1], LIGHTING[0]);
+            add_face([1, 3, 0, 1, 2, 3]);
         };
 
         if faces.intersects(Face::RIGHT) {
-            add_face([7, 3, 2, 6, 7, 2], LIGHTING[1]);
+            add_face([7, 3, 2, 6, 7, 2]);
         };
             
         if faces.intersects(Face::TOP) {
-            add_face([1, 5, 6, 2, 1, 6], LIGHTING[2]);
+            add_face([1, 5, 6, 2, 1, 6]);
         }
 
         if faces.intersects(Face::FRONT) {
-            add_face([4, 7, 5, 7, 6, 5], LIGHTING[3]);
+            add_face([4, 7, 5, 7, 6, 5]);
         }
 
         if faces.intersects(Face::LEFT) {
-            add_face([0, 4, 1, 4, 5, 1], LIGHTING[4]);
+            add_face([0, 4, 1, 4, 5, 1]);
         }
 
         if faces.intersects(Face::BOTTOM) {
-            add_face([3, 7, 4, 0, 3, 4], LIGHTING[5]);
+            add_face([3, 7, 4, 0, 3, 4]);
         }
 
         let builder = Self {

@@ -21,7 +21,7 @@ fn main() {
         Matrix4::perspective(Deg(55.0), 16.0/9.0, 0.1, 500.0)
     );
 
-    let (tx, rx) = std::sync::mpsc::channel::<(i32, i32, mesh::Mesh)>();
+    let (tx, rx) = std::sync::mpsc::channel::<(i32, i32, i32, mesh::Mesh)>();
     let (bound0, bound1) = (-32, 32);
 
     let world_minister = std::thread::spawn(move || {
@@ -45,7 +45,7 @@ fn main() {
                     let chunk = Chunk::new(pos, &mut noise);
                     let mesher = world::GreedyCubeMesher::from_chunk(&chunk);
                     let mesh = mesher.generate_mesh();
-                    tx.send((pos.x(), pos.y(), mesh))
+                    tx.send((pos.x(), pos.y(), pos.z(), mesh))
                 });
             }
         }
@@ -97,10 +97,10 @@ fn main() {
 
                 cam.move_camera(pos);
 
-                if let Ok((x, y, mesh)) = rx.recv() {
+                if let Ok((x, y , z, mesh)) = rx.recv() {
                     println!(
-                        "chunk at ({}, {}) has {} vertices and {} indices",
-                        x, y,
+                        "chunk at ({}, {}, {}) has {} vertices and {} indices",
+                        x, y, z,
                         mesh.vertices().len(),
                         mesh.indices().len(),
                     );
