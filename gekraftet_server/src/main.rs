@@ -3,6 +3,7 @@
 mod packet;
 mod world;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Hello, gekraftet-server!");
 }
