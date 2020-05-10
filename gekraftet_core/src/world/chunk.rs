@@ -1,6 +1,6 @@
 use std::ops::Deref;
 use crate::maths::{ Vector3F, Vector3I };
-use crate::utils::{ lerp, PartialArray };
+use crate::utils::{ lerp, PartialArray, PartialHeapArray };
 use super::*;
 
 #[derive(Clone, Debug)]
@@ -79,7 +79,8 @@ impl Section {
             }
         }
 
-        let mut bloy: Vec<[[Block; SECTION_LENGTH_X]; SECTION_LENGTH_Z]> = Vec::with_capacity(SECTION_LENGTH_Y);
+        // This is allocated on heap because otherwise we will blow the stack up.
+        let mut bloy = PartialHeapArray::<_, SECTION_LENGTH_Y>::new();
 
         for y in 0..SECTION_LENGTH_Y {
             let mut blox = PartialArray::<[Block; SECTION_LENGTH_X], SECTION_LENGTH_Z>::new();
@@ -137,16 +138,7 @@ impl Section {
         }
 
         // Convert Vec<[[Block; 16]; 16]> into Box<[[[Block; 16]; 16]; 16]>
-        let blocks = unsafe {
-            let mut bloy = std::mem::ManuallyDrop::new(bloy);
-            assert!(
-                bloy.len() == CHUNK_LENGTH_Y / SECTION_LENGTH_Y, 
-                "a chunk should have {} sections",
-                CHUNK_LENGTH_Y / SECTION_LENGTH_Y
-            );
-            let ptr = bloy.as_mut_ptr() as *mut _;
-            Box::from_raw(ptr)
-        };
+        let blocks = bloy.into_full_array().unwrap();
 
         /*
         // TODO: Make things flat
@@ -169,4 +161,3 @@ impl Section {
         }
     }
 }
-
