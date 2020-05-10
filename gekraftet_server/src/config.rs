@@ -5,12 +5,18 @@ use std::net::{ IpAddr, Ipv4Addr };
 const CONFIG_PATH: &'static str = "./server.conf";
 
 pub struct Config {
-    ip: IpAddr,
-    port: u16,
+    pub ip: IpAddr,
+    pub players: u32,
+    pub port: u16,
 }
 
 impl Config {
     pub fn try_read() -> IoResult<Self> {
+        if !std::path::Path::new(CONFIG_PATH).exists() {
+            Self::default().try_write()?;
+            return Ok(Self::default())
+        }
+
         let config_file = File::open(CONFIG_PATH)
             .map(|x| BufReader::new(x))?;
         
@@ -25,6 +31,8 @@ impl Config {
             match (name, value) {
                 ("ip", ip) => 
                     result.ip = ip.parse().expect("config: invalid ip address"),
+                ("players", players) =>
+                    result.players = players.parse().expect("config: invalid players count"),
                 ("port", port) =>
                     result.port = port.parse().expect("config: invalid port"),
                 
@@ -41,6 +49,7 @@ impl Config {
         
         writeln!(config_file, "ip={}", self.ip)?;
         writeln!(config_file, "port={}", self.port)?;
+        writeln!(config_file, "players={}", self.players)?;
 
         Ok(())
     }
@@ -50,6 +59,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             ip: IpAddr::from(Ipv4Addr::new(127, 0, 0, 1)),
+            players: 20,
             port: 25565,
         }
     }
