@@ -17,13 +17,7 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct NamedBinaryTag {
-    root: Value,
-}
-
-#[derive(Debug)]
-pub struct Value {
-    name: String,
-    value: ValueData,
+    root: HashMap<String, ValueData>,
 }
 
 #[derive(Debug)]
@@ -42,17 +36,17 @@ pub enum ValueData {
 
 impl NamedBinaryTag {
     pub fn new() -> Self {
-        let root = Value {
-            name: String::new(),
-            value: ValueData::Compound(HashMap::new()),
-        };
-
-        Self { root }
+        Self { 
+            root: HashMap::new() 
+        }
     }
 
     pub fn from_binary(value: &[u8]) -> Result<Self> {
         let mut root = Self::new();
-        root.root.value = Self::parse_compound(value, 0)?.1;
+        root.root = Self::parse_compound(value, 0)?.1
+            .into_compound()
+            .unwrap();
+
         Ok(root)
     }
 
@@ -197,12 +191,6 @@ impl NamedBinaryTag {
         };
 
         Ok((offset, ValueData::Compound(result)))
-    }
-}
-
-impl Value {
-    pub fn new(name: String, value: ValueData) -> Self {
-        Self { name, value }
     }
 }
 
