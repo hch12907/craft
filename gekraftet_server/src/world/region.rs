@@ -26,7 +26,7 @@ pub struct RegionHeader {
 
 pub struct Region {
     header: RegionHeader,
-    data: Vec<(ChunkHeader, Chunk)>,
+    data: Vec<(ChunkHeader, Box<[u8]>)>,
 }
 
 impl Region {
@@ -86,9 +86,7 @@ impl Region {
                 unsafe { chunk_bytes.set_len(bytes_to_read) };
                 reader.read_exact(chunk_bytes.as_mut_slice())?;
 
-                // let chunk_decompressed = chunk_bytes.decompress(header.compression_type);
-                // let chunk = chunk_decopmressed.deserialize();
-                // data.push((header, chunk));
+                data.push((header, chunk_bytes.into_boxed_slice()));
             }
         }
 
