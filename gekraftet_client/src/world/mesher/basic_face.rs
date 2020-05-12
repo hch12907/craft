@@ -12,14 +12,14 @@ impl<'a> BasicFaceMesher<'a> {
         let mut mb = MeshBuilder::new();
         
         for (i, sec) in self.chunk.sections().iter().enumerate() {
-            let range = (0..world::SECTION_LENGTH_Y)
-                .flat_map(move |y| (0..world::SECTION_LENGTH_Z)
-                    .flat_map(move |z| (0..world::SECTION_LENGTH_X)
-                        .map(move |x| (y, z, x))
+            let range = (0..world::SECTION_LENGTH_X)
+                .flat_map(move |x| (0..world::SECTION_LENGTH_Z)
+                    .flat_map(move |z| (0..world::SECTION_LENGTH_Y)
+                        .map(move |y| (x, z, y))
                 ));
             
-            for (y, z, x) in range {
-                let block = &sec[y][z][x];
+            for (x, z, y) in range {
+                let block = &sec[x][z][y];
 
                 // Otherwise debug builds will panic with integer underflow.
                 let px = x + 1;
@@ -29,12 +29,12 @@ impl<'a> BasicFaceMesher<'a> {
                 let pz = z + 1;
                 let mz = z.wrapping_sub(1);
                 
-                let block_top    = sec.get(py).map(|b| &b[z][x]);
-                let block_bottom = sec.get(my).map(|b| &b[z][x]);
-                let block_front  = sec[y].get(pz).map(|b| &b[x]);
-                let block_back   = sec[y].get(mz).map(|b| &b[x]);
-                let block_right  = sec[y][z].get(px);
-                let block_left   = sec[y][z].get(mx);
+                let block_right = sec.get(px).map(|b| &b[z][y]);
+                let block_left  = sec.get(mx).map(|b| &b[z][y]);
+                let block_front  = sec[x].get(pz).map(|b| &b[y]);
+                let block_back   = sec[x].get(mz).map(|b| &b[y]);
+                let block_top    = sec[x][z].get(py);
+                let block_bottom = sec[x][z].get(my);
 
                 let (x, y, z) = (x as i32, y as i32, z as i32);
 

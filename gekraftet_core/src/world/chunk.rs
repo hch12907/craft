@@ -62,9 +62,9 @@ impl Section {
 
         let mut noises = [[[0.0; NOISE_SAMPLES_X + 1]; NOISE_SAMPLES_Y + 1]; NOISE_SAMPLES_Z + 1];
         
-        for y in 0..=NOISE_SAMPLES_Y as i32 {
+        for x in 0..=NOISE_SAMPLES_X as i32 {
             for z in 0..=NOISE_SAMPLES_Z as i32 {
-                for x in 0..=NOISE_SAMPLES_X as i32 {
+                for y in 0..=NOISE_SAMPLES_Y as i32 {
                     let relative_pos = Vector3I::new(
                         x * NOISE_FACTOR_X as i32,
                         y * NOISE_FACTOR_Y as i32,
@@ -80,15 +80,15 @@ impl Section {
         }
 
         // This is allocated on heap because otherwise we will blow the stack up.
-        let mut bloy = PartialHeapArray::<_, SECTION_LENGTH_Y>::new();
+        let mut blox = PartialHeapArray::<_, SECTION_LENGTH_Y>::new();
 
-        for y in 0..SECTION_LENGTH_Y {
-            let mut blox = PartialArray::<[Block; SECTION_LENGTH_X], SECTION_LENGTH_Z>::new();
+        for x in 0..SECTION_LENGTH_X {
+            let mut bloz = PartialArray::<[Block; SECTION_LENGTH_X], SECTION_LENGTH_Z>::new();
 
             for z in 0..SECTION_LENGTH_Z {
-                let mut bloz = PartialArray::<Block, SECTION_LENGTH_X>::new();
+                let mut bloy = PartialArray::<Block, SECTION_LENGTH_X>::new();
 
-                for x in 0..SECTION_LENGTH_X {
+                for y in 0..SECTION_LENGTH_Y {
                     let relative_pos = Vector3I::new(x as i32, y as i32, z as i32);
                     let actual_pos = starting + relative_pos;
 
@@ -128,17 +128,17 @@ impl Section {
                         0
                     };
 
-                    bloz.push(Block::new(id)).unwrap();
+                    bloy.push(Block::new(id)).unwrap();
                 }
 
-                blox.push(bloz.into_full_array().unwrap()).unwrap();
+                bloz.push(bloy.into_full_array().unwrap()).unwrap();
             }
 
-            bloy.push(blox.into_full_array().unwrap());
+            blox.push(bloz.into_full_array().unwrap());
         }
 
         // Convert Vec<[[Block; 16]; 16]> into Box<[[[Block; 16]; 16]; 16]>
-        let blocks = bloy.into_full_array().unwrap();
+        let blocks = blox.into_full_array().unwrap();
 
         /*
         // TODO: Make things flat

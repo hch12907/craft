@@ -97,28 +97,28 @@ impl<'a> GreedyCubeMesher<'a> {
 
             let range = 
                 (0..16)
-                    .flat_map(move |y| (0..16)
-                        .map(move |z| (y, z)));
+                    .flat_map(move |x| (0..16)
+                        .map(move |z| (x, z)));
 
-            // initialization and a marking pass along x-axis
-            for (y, z) in range {
-                for x in 0..16 {
+            // initialization and a marking pass along y-axis
+            for (x, z) in range {
+                for y in 0..16 {
                     let block_id = blocks.iter().enumerate().rev().find(|b| {
-                        b.1 == &&section[y][z][x]
+                        b.1 == &&section[x][z][y]
                     });
 
                     let block_id = match block_id {
                         Some((i, _)) => i as u16,
                         None => {
-                            blocks.push(&section[y][z][x]);
+                            blocks.push(&section[x][z][y]);
                             (blocks.len() - 1) as u16
                         },
                     };
 
                     let mut group = GroupedBlock::new(block_id);
 
-                    if x > 0 {
-                        let b = g.get_mut(y * 256 + z * 16 + x - 1).unwrap();
+                    if y > 0 {
+                        let b = g.get_mut(x * 256 + z * 16 + y - 1).unwrap();
                         
                         let can_disable_face =
                             blocks[b.block_id()].id != 0 && 
@@ -128,11 +128,11 @@ impl<'a> GreedyCubeMesher<'a> {
                         let mut face2 = b.faces();
 
                         if b.block_id() == group.block_id() {
-                            group.extend_to(1 + b.extent().x() as usize, 1, 1);
+                            group.extend_to(1, 1 + b.extent().y() as usize, 1);
                             b.toggle_group();
                         } else if can_disable_face {
-                            face1.disable(Face::LEFT);
-                            face2.disable(Face::RIGHT);
+                            face1.disable(Face::BOTTOM);
+                            face2.disable(Face::TOP);
                             group.set_faces(face1);
                             b.set_faces(face2);
                         }
@@ -146,12 +146,12 @@ impl<'a> GreedyCubeMesher<'a> {
         };
 
         // marking along z-axis
-        for y in 0..16 {
+        for x in 0..16 {
             for z in 0..16 {
-                for x in 0..16 {
+                for y in 0..16 {
                     if z == 0 { continue };
         
-                    let idx = y * 256 + z * 16 + x;
+                    let idx = x * 256 + z * 16 + y;
                     let idx2 = idx - 16;
         
                     if groups[idx].is_in_group() {
@@ -161,7 +161,7 @@ impl<'a> GreedyCubeMesher<'a> {
                     let can_disable_face =
                         blocks[groups[idx].block_id()].id != 0 && 
                         blocks[groups[idx2].block_id()].id != 0 &&
-                        groups[idx2].extent().x() >= groups[idx].extent().x();
+                        groups[idx2].extent().y() >= groups[idx].extent().y();
 
                     if groups[idx2].is_in_group() {
                         if can_disable_face {
@@ -172,7 +172,7 @@ impl<'a> GreedyCubeMesher<'a> {
                         continue
                     };
                     
-                    if groups[idx].extent().x() == groups[idx2].extent().x() {
+                    if groups[idx].extent().y() == groups[idx2].extent().y() {
                         let mut face1 = groups[idx].faces();
                         let mut face2 = groups[idx2].faces();
 
@@ -196,13 +196,13 @@ impl<'a> GreedyCubeMesher<'a> {
             }
         }
 
-        // marking along y-axis
-        for y in 0..16 {
+        // marking along x-axis
+        for x in 0..16 {
             for z in 0..16 {
-                for x in 0..16 {
-                    if y == 0 { continue };
+                for y in 0..16 {
+                    if x == 0 { continue };
         
-                    let idx = y * 256 + z * 16 + x;
+                    let idx = x * 256 + z * 16 + y;
                     let idx2 = idx - 256;
         
                     if groups[idx].is_in_group() {
@@ -212,19 +212,19 @@ impl<'a> GreedyCubeMesher<'a> {
                     let can_disable_face =
                         blocks[groups[idx].block_id()].id != 0 && 
                         blocks[groups[idx2].block_id()].id != 0 &&
-                        groups[idx2].extent().x() >= groups[idx].extent().x() &&
+                        groups[idx2].extent().y() >= groups[idx].extent().y() &&
                         groups[idx2].extent().z() >= groups[idx].extent().z();
 
                     if groups[idx2].is_in_group() {
                         if can_disable_face {
                             let mut face = groups[idx].faces();
-                            face.disable(Face::BOTTOM);
+                            face.disable(Face::LEFT);
                             groups[idx].set_faces(face);
                         }
                         continue
                     };
                     
-                    if groups[idx].extent().x() == groups[idx2].extent().x() &&
+                    if groups[idx].extent().y() == groups[idx2].extent().y() &&
                        groups[idx].extent().z() == groups[idx2].extent().z() 
                     {
                         let mut face1 = groups[idx].faces();
@@ -236,13 +236,13 @@ impl<'a> GreedyCubeMesher<'a> {
                             let orig_ext = groups[idx].extent();
                             
                             groups[idx].extend_to(
-                                orig_ext.x() as usize,
-                                (orig_ext.y() + groups[idx2].extent().y()) as usize,
+                                (orig_ext.x() + groups[idx2].extent().x()) as usize,
+                                orig_ext.y() as usize,
                                 orig_ext.z() as usize,
                             );
                         } else if can_disable_face {
-                            face1.disable(Face::BOTTOM);
-                            face2.disable(Face::TOP);
+                            face1.disable(Face::LEFT);
+                            face2.disable(Face::RIGHT);
                             groups[idx].set_faces(face1);
                             groups[idx2].set_faces(face2);
                         }
@@ -262,9 +262,9 @@ impl<'a> GreedyCubeMesher<'a> {
                 continue
             };
 
-            let y = ((pos >> 8) & 0xF) as i32;
+            let x = ((pos >> 8) & 0xF) as i32;
             let z = ((pos >> 4) & 0xF) as i32;
-            let x = ((pos >> 0) & 0xF) as i32;
+            let y = ((pos >> 0) & 0xF) as i32;
             let extent = Vector3F::from(grp.extent());
             let origin = Vector3I::new(x, y, z) + block_pos - grp.extent();
 
