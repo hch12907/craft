@@ -7,7 +7,7 @@
 /// More information on the protocol can be found on this helpful [wiki page]
 /// (https://wiki.vg/Protocol&oldid=510).
 #[allow(non_camel_case_types)]
-pub enum Packet {
+pub enum PacketId {
     /* 0x00 */ KeepAlive,
     /* 0x01 */ LoginRequest,
     /* 0x02 */ Handshake,
@@ -75,7 +75,7 @@ pub enum Packet {
     /* 0xFF */ DisconnectOrKick,
 }
 
-impl Packet {
+impl PacketId {
     pub fn packet_id(&self) -> u8 {
         match self {
             Self::KeepAlive => 0x00,
