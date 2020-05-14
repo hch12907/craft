@@ -1,19 +1,26 @@
+/// This enum represents the packets sent by the client to server and vice versa.
+///
+/// Under this protocol, the strings are UCS-2 (with the exception of OpenWindow)
+/// and they're prefixed with a short denoting their length.
+///
+/// There are some changes between the vanilla packets and the packets shown here
+/// with Y-axis expansion (from i8 to i32) being the most notable.
 pub enum PacketData {
     KeepAlive,
 
     LoginRequest {
         id: i32,
-        username: String,
+        username: Box<str>,
         seed: u64,
         dimension: u8,
     },
 
     Handshake {
-        username_or_hash: String,
+        username_or_hash: Box<str>,
     },
 
     ChatMessage {
-        message: String,
+        message: Box<str>,
     },
 
     TimeUpdate {
@@ -114,7 +121,7 @@ pub enum PacketData {
 
     NamedEntitySpawn {
         entity_id: i32,
-        name: String,
+        name: Box<str>,
         x: i32,
         y: i32,
         z: i32,
@@ -161,12 +168,12 @@ pub enum PacketData {
         z: i32,
         yaw: i8,
         pitch: i8,
-        data_stream: Vec<u8>, // TODO: actual metadata struct
+        data_stream: Box<[u8]>, // TODO: actual metadata struct
     },
 
     AddPainting {
         entity_id: i32,
-        title: String,
+        title: Box<str>,
         x: i32,
         y: i32,
         z: i32,
@@ -241,7 +248,7 @@ pub enum PacketData {
 
     EntityMetadata {
         entity_id: i32,
-        metadata: Vec<u8>, // TODO: actual metadata struct
+        metadata: Box<[u8]>, // TODO: actual metadata struct
     },
 
     PreChunk {
@@ -258,16 +265,16 @@ pub enum PacketData {
         size_y: i8,
         size_z: i8,
         compressed_size: i32,
-        compressed_data: Vec<u8>,
+        compressed_data: Box<[u8]>,
     },
 
     MultiBlockChange {
         x: i32,
         z: i32,
         array_size: i16,
-        coordinate_array: Vec<u16>,
-        type_array: Vec<u16>,
-        metadata_array: Vec<u16>,
+        coordinate_array: Box<[u16]>,
+        type_array: Box<[u16]>,
+        metadata_array: Box<[u16]>,
     },
 
     BlockChange {
@@ -291,7 +298,7 @@ pub enum PacketData {
         z: f64,
         radius: f32,
         record_count: i32,
-        record: Vec<[u8; 3]>,
+        record: Box<[[u8; 3]]>,
     },
 
     SoundEffect {
@@ -317,7 +324,7 @@ pub enum PacketData {
     OpenWindow {
         window_id: i8,
         inventory_type: i8,
-        window_title: String,
+        window_title: Box<str>, // NOTE: this is the only UTF8 string here
         slots_number: u8,
     },
 
@@ -348,7 +355,7 @@ pub enum PacketData {
         window_id: i8,
         item_count: i16,
         // stores (item ID, Some(count, uses)) if item ID != -1
-        payload: Vec<(i16, Option<(i8, i16)>)>,
+        payload: Box<[(i16, Option<(i8, i16)>)]>,
     },
 
     UpdateProgressBar {
@@ -367,17 +374,14 @@ pub enum PacketData {
         x: i32,
         y: i32, // NOTE: the vanilla game uses i16 here
         z: i32,
-        text1: String,
-        text2: String,
-        text3: String,
-        text4: String,
+        text: Box<str>, // NOTE: max. 4 lines, and each line starts with its length
     },
 
     ItemData {
         item_type: i16,
         item_id: i16, // should be called damage value
         text_length: u8,
-        text: Vec<u8>,
+        text: Box<[u8]>,
     },
 
     IncrementStatistic {
@@ -386,6 +390,6 @@ pub enum PacketData {
     },
 
     DisconnectOrKick {
-        reason: String,
+        reason: Box<str>,
     },
 }
