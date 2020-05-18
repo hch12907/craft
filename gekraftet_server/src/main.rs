@@ -21,14 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tokio::spawn(async move {
             let mut buffer = BufReader::new(stream);
             loop {
-                let mut mesg = Vec::new();
-                match buffer.read_until(b'$', &mut mesg).await {
-                    Ok(0) => return,
-                    Ok(x) => println!("bytes received: {}", x),
-                    Err(why) => println!("error while reading socket: {}", why),
-                };
-                mesg.pop();
-                println!("message received: {}", String::from_utf8(mesg).unwrap())
+                packet::Packet::read_packet(&mut buffer).await.unwrap();
             }
         });
     }
