@@ -6,7 +6,7 @@
 ///
 /// More information on the protocol can be found on this helpful [wiki page]
 /// (https://wiki.vg/Protocol&oldid=510).
-#[allow(non_camel_case_types)]
+#[derive(Clone, Debug)]
 pub enum PacketId {
     /* 0x00 */ KeepAlive,
     /* 0x01 */ LoginRequest,

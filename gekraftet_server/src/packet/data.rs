@@ -5,6 +5,7 @@
 ///
 /// There are some changes between the vanilla packets and the packets shown here
 /// with Y-axis expansion (from i8 to i32) being the most notable.
+#[derive(Clone, Debug)]
 pub enum PacketData {
     KeepAlive,
 
