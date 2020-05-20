@@ -21,7 +21,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tokio::spawn(async move {
             let mut buffer = BufReader::new(stream);
             loop {
-                packet::Packet::read_packet(&mut buffer).await.unwrap();
+                match packet::Packet::read_packet(&mut buffer).await {
+                    Err(e) if e.kind() == tokio::io::ErrorKind::UnexpectedEof => {
+                        println!("connection to {} ended", addr);
+                        break;
+                    }
+                    Err(e) => Err(e).unwrap(),
+                    _ => {},
+                };
             }
         });
     }
