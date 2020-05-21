@@ -1,8 +1,11 @@
 mod data;
 mod id;
+mod metadata;
 mod receiver;
+mod utils;
 
 pub use data::*;
+pub use metadata::*;
 pub use id::*;
 
 use tokio::io::{ AsyncReadExt, Result as IoResult };
@@ -20,6 +23,7 @@ impl Packet {
             Some(PacketId::KeepAlive) => PacketData::read_keep_alive(input).await?,
             Some(PacketId::LoginRequest) => PacketData::read_login_request(input).await?,
             Some(PacketId::Handshake) => PacketData::read_handshake(input).await?,
+            Some(PacketId::ChatMessage) => PacketData::read_chat_message(input).await?,
 
             _ => PacketData::read_generic(input).await?,
         };

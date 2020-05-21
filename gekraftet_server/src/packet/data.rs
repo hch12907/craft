@@ -1,3 +1,5 @@
+use super::Metadata;
+
 /// This enum represents the packets sent by the client to server and vice versa.
 ///
 /// Under this protocol, the strings are UCS-2 (with the exception of OpenWindow)
@@ -171,7 +173,7 @@ pub enum PacketData {
         z: i32,
         yaw: i8,
         pitch: i8,
-        data_stream: Box<[u8]>, // TODO: actual metadata struct
+        data_stream: Metadata,
     },
 
     AddPainting {
@@ -251,7 +253,7 @@ pub enum PacketData {
 
     EntityMetadata {
         entity_id: i32,
-        metadata: Box<[u8]>, // TODO: actual metadata struct
+        metadata: Metadata,
     },
 
     PreChunk {
