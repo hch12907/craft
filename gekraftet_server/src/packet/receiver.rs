@@ -714,7 +714,7 @@ impl PacketData {
         })
     }
 
-    pub(super) async fn explosion<I>(input: &mut I) -> IoResult<Self>
+    pub(super) async fn read_explosion<I>(input: &mut I) -> IoResult<Self>
     where
         I: AsyncReadExt + Unpin
     {
@@ -999,12 +999,24 @@ impl PacketData {
         })
     }
 
-    pub(super) async fn read_generic<I>(_input: &mut I) -> IoResult<Self>
+    pub(super) async fn read_generic<I>(input: &mut I) -> IoResult<Self>
     where
-        I: AsyncReadExt + Unpin,
+        I: AsyncReadExt + Unpin + tokio::io::AsyncWriteExt,
     {
+        const GENERIC_INVALID_PACKET_MESSAGE: &'static str = "gekraftet_server: invalid packet received";
+        let reason = GENERIC_INVALID_PACKET_MESSAGE
+            .to_string()
+            .encode_utf16()
+            .collect::<Vec<_>>();
+
+        input.write_i16(GENERIC_INVALID_PACKET_MESSAGE.len() as i16).await?;
+        
+        for x in reason.iter() {
+            input.write_u16(*x).await?;
+        }
+
         Ok(PacketData::DisconnectOrKick {
-            reason: "Invalid packet received".into(),
+            reason: GENERIC_INVALID_PACKET_MESSAGE.into()
         })
     }
 }
