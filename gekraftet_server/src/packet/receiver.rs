@@ -189,7 +189,7 @@ impl PacketData {
     {
         let status = input.read_u8().await?;
         let x = input.read_i32().await?;
-        let y = input.read_i32().await?;
+        let y = input.read_i8().await? as i32;
         let z = input.read_i32().await?;
 
         Ok(PacketData::PlayerDigging { status, x, y, z })
@@ -200,7 +200,7 @@ impl PacketData {
         I: AsyncReadExt + Unpin,
     {
         let x = input.read_i32().await?;
-        let y = input.read_i32().await?;
+        let y = input.read_i8().await? as i32;
         let z = input.read_i32().await?;
         let direction = input.read_i8().await?;
         let block_id = input.read_i16().await?;
@@ -234,7 +234,7 @@ impl PacketData {
         let player_id = input.read_i32().await?;
         let in_bed = input.read_u8().await?;
         let x = input.read_i32().await?;
-        let y = input.read_i32().await?;
+        let y = input.read_i8().await? as i32;
         let z = input.read_i32().await?;
 
         Ok(PacketData::UseBed {
@@ -434,9 +434,572 @@ impl PacketData {
         })
     }
 
-    
+    pub(super) async fn read_entity_velocity<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let velocity_x = input.read_i16().await?;
+        let velocity_y = input.read_i16().await?;
+        let velocity_z = input.read_i16().await?;
 
-    pub(super) async fn read_generic<I>(input: &mut I) -> IoResult<Self>
+        Ok(PacketData::EntityVelocity {
+            entity_id,
+            velocity_x,
+            velocity_y,
+            velocity_z,
+        })
+    }
+
+    pub(super) async fn read_destroy_entity<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+
+        Ok(PacketData::DestroyEntity {
+            entity_id,
+        })
+    }
+
+    pub(super) async fn read_entity_unchanged<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+
+        Ok(PacketData::EntityUnchanged {
+            entity_id,
+        })
+    }
+
+    pub(super) async fn read_entity_relative_move<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let dx = input.read_i8().await?;
+        let dy = input.read_i8().await?;
+        let dz = input.read_i8().await?;
+
+        Ok(PacketData::EntityRelativeMove {
+            entity_id,
+            dx,
+            dy,
+            dz,
+        })
+    }
+
+    pub(super) async fn read_entity_look<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let yaw = input.read_i8().await?;
+        let pitch = input.read_i8().await?;
+
+        Ok(PacketData::EntityLook {
+            entity_id,
+            yaw,
+            pitch,
+        })
+    }
+
+    // woah this is such a long name!
+    pub(super) async fn read_entity_look_and_relative_move<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let dx = input.read_i8().await?;
+        let dy = input.read_i8().await?;
+        let dz = input.read_i8().await?;
+        let yaw = input.read_i8().await?;
+        let pitch = input.read_i8().await?;
+
+        Ok(PacketData::EntityLookAndRelativeMove {
+            entity_id,
+            dx,
+            dy,
+            dz,
+            yaw,
+            pitch,
+        })
+    }
+
+    pub(super) async fn read_entity_teleport<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let dx = input.read_i32().await?;
+        let dy = input.read_i32().await?;
+        let dz = input.read_i32().await?;
+        let yaw = input.read_i8().await?;
+        let pitch = input.read_i8().await?;
+
+        Ok(PacketData::EntityTeleport {
+            entity_id,
+            dx,
+            dy,
+            dz,
+            yaw,
+            pitch,
+        })
+    }
+
+    pub(super) async fn read_entity_status<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let status = input.read_u8().await?;
+
+        Ok(PacketData::EntityStatus {
+            entity_id,
+            status,
+        })
+    }
+
+    pub(super) async fn read_attach_entity<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let vehicle_id = input.read_u8().await?;
+
+        Ok(PacketData::AttachEntity {
+            entity_id,
+            vehicle_id,
+        })
+    }
+
+    pub(super) async fn read_entity_metadata<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let entity_id = input.read_i32().await?;
+        let metadata = Metadata::read_from(input).await?;
+
+        Ok(PacketData::EntityMetadata {
+            entity_id,
+            metadata,
+        })
+    }
+
+    pub(super) async fn read_pre_chunk<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let x = input.read_i32().await?;
+        let z = input.read_i32().await?;
+        let init_chunk = input.read_i8().await? == 1;
+
+        Ok(PacketData::PreChunk {
+            x,
+            z,
+            init_chunk,
+        })
+    }
+
+    pub(super) async fn read_map_chunk<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let x = input.read_i32().await?;
+        let y = input.read_i16().await? as i32;
+        let z = input.read_i32().await?;
+        let size_x = input.read_i8().await?;
+        let size_y = input.read_i8().await?;
+        let size_z = input.read_i8().await?;
+        let compressed_size = input.read_i32().await?;
+        
+        let compressed_data = {
+            let mut data = Vec::with_capacity(compressed_size as usize);
+            input.take(compressed_size as u64).read_to_end(&mut data).await?;
+            data.into_boxed_slice()
+        };
+
+
+        Ok(PacketData::MapChunk {
+            x,
+            y,
+            z,
+            size_x,
+            size_y,
+            size_z,
+            compressed_size,
+            compressed_data,
+        })
+    }
+
+    pub(super) async fn read_multi_block_change<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let x = input.read_i32().await?;
+        let z = input.read_i32().await?;
+        let array_size = input.read_i16().await?;
+        
+        let coordinate_array = {
+            let mut data = Vec::with_capacity(array_size as usize);
+            for _ in 0..array_size {
+                data.push(input.read_u16().await?);
+            }
+            data.into_boxed_slice()
+        };
+
+        let type_array = {
+            let mut data = Vec::with_capacity(array_size as usize);
+            for _ in 0..array_size {
+                data.push(input.read_u16().await?);
+            }
+            data.into_boxed_slice()
+        };
+
+        let metadata_array = {
+            let mut data = Vec::with_capacity(array_size as usize);
+            for _ in 0..array_size {
+                data.push(input.read_u16().await?);
+            }
+            data.into_boxed_slice()
+        };
+
+        Ok(PacketData::MultiBlockChange {
+            x,
+            z,
+            array_size,
+            coordinate_array,
+            type_array,
+            metadata_array,
+        })
+    }
+
+    pub(super) async fn read_block_change<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let x = input.read_i32().await?;
+        let y = input.read_i8().await? as i32;
+        let z = input.read_i32().await?;
+        let block_type = input.read_i8().await?;
+        let block_metadata = input.read_i8().await?;
+        
+        Ok(PacketData::BlockChange {
+            x,
+            y,
+            z,
+            block_type,
+            block_metadata,
+        })
+    }
+
+    pub(super) async fn read_block_action<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let x = input.read_i32().await?;
+        let y = input.read_i8().await? as i32;
+        let z = input.read_i32().await?;
+        let states = [
+            input.read_u8().await?,
+            input.read_u8().await?,
+        ];
+        
+        Ok(PacketData::BlockAction {
+            x,
+            y,
+            z,
+            states
+        })
+    }
+
+    pub(super) async fn explosion<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let x = f64::from_bits(input.read_u64().await?);
+        let y = f64::from_bits(input.read_u64().await?);
+        let z = f64::from_bits(input.read_u64().await?);
+        let radius = f32::from_bits(input.read_u32().await?);
+        let record_count = input.read_i32().await?;
+        
+        let record = {
+            let mut data = Vec::with_capacity(record_count as usize);
+            for _ in 0..record_count {
+                let record = [
+                    input.read_u8().await?,
+                    input.read_u8().await?,
+                    input.read_u8().await?,
+                ];
+                data.push(record);
+            }
+            data.into_boxed_slice()
+        };
+        
+        Ok(PacketData::Explosion {
+            x,
+            y,
+            z,
+            radius,
+            record_count,
+            record,
+        })
+    }
+
+    pub(super) async fn read_sound_effect<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let effect_id = input.read_i32().await?;
+        let x = input.read_i32().await?;
+        let y = input.read_i32().await?;
+        let z = input.read_i32().await?;
+        let sound_data = input.read_i32().await?;
+        
+        Ok(PacketData::SoundEffect {
+            effect_id,
+            x,
+            y,
+            z,
+            sound_data,
+        })
+    }
+
+    pub(super) async fn read_new_state<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let reason_code = input.read_u8().await?;
+        
+        Ok(PacketData::NewState {
+            reason_code
+        })
+    }
+
+    pub(super) async fn read_thunderbolt<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let entity_id = input.read_i32().await?;
+        let unknown = input.read_i8().await? == 1;
+        let x = input.read_i32().await?;
+        let y = input.read_i32().await?;
+        let z = input.read_i32().await?;
+
+        Ok(PacketData::Thunderbolt {
+            entity_id,
+            unknown,
+            x,
+            y,
+            z,
+        })
+    }
+
+    pub(super) async fn read_open_window<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+        let inventory_type = input.read_i8().await?;
+        let window_title = read_utf8(input).await?;
+        let slots_number = input.read_u8().await?;
+
+        Ok(PacketData::OpenWindow {
+            window_id,
+            inventory_type,
+            window_title,
+            slots_number,
+        })
+    }
+
+    pub(super) async fn read_close_window<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+
+        Ok(PacketData::CloseWindow {
+            window_id
+        })
+    }
+
+    pub(super) async fn read_window_click<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+        let clicked_slot = input.read_i16().await?;
+        let right_clicked = input.read_i8().await? == 1;
+        let action_number = input.read_i16().await?;
+        let shift_clicked = input.read_i8().await? == 1;
+        let item_id = input.read_i16().await?;
+        let item_count = input.read_i8().await?;
+        let item_uses = input.read_i16().await?;
+
+        Ok(PacketData::WindowClick {
+            window_id,
+            clicked_slot,
+            right_clicked,
+            action_number,
+            shift_clicked,
+            item_id,
+            item_count,
+            item_uses,
+        })
+    }
+
+    pub(super) async fn read_set_slot<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+        let update_slot = input.read_i16().await?;
+        let item_id = input.read_i16().await?;
+        let item_count = input.read_i8().await?;
+        let item_uses = input.read_i16().await?;
+
+        Ok(PacketData::SetSlot {
+            window_id,
+            update_slot,
+            item_id,
+            item_count,
+            item_uses,
+        })
+    }
+
+    pub(super) async fn read_window_items<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+        let item_count = input.read_i16().await?;
+
+        let payload = {
+            let mut data = Vec::with_capacity(item_count as usize);
+            for _ in 0..item_count {
+                let item_id = input.read_i16().await?;
+                
+                let optional_desc = if item_id == -1 {
+                    None
+                } else {
+                    let item_count = input.read_i8().await?;
+                    let item_uses = input.read_i16().await?;
+                    Some((item_count, item_uses))
+                };
+
+                data.push((item_id, optional_desc))
+            }
+            data.into_boxed_slice()
+        };
+
+        Ok(PacketData::WindowItems {
+            window_id,
+            item_count,
+            payload,
+        })
+    }
+
+    pub(super) async fn read_update_progress_bar<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+        let progress_bar = input.read_i16().await?;
+        let value = input.read_i16().await?;
+
+        Ok(PacketData::UpdateProgressBar {
+            window_id,
+            progress_bar,
+            value,
+        })
+    }
+
+    pub(super) async fn read_transaction<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let window_id = input.read_i8().await?;
+        let action_number = input.read_i16().await?;
+        let accepted = input.read_i8().await? == 1;
+
+        Ok(PacketData::Transaction {
+            window_id,
+            action_number,
+            accepted,
+        })
+    }
+
+    pub(super) async fn read_update_sign<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let x = input.read_i32().await?;
+        let y = input.read_i32().await?;
+        let z = input.read_i32().await?;
+
+        let text = (
+            read_ucs2(input).await?.to_string()
+            + "\n" + &read_ucs2(input).await?
+            + "\n" + &read_ucs2(input).await?
+            + "\n" + &read_ucs2(input).await?
+        ).into_boxed_str();
+
+        Ok(PacketData::UpdateSign {
+            x,
+            y,
+            z,
+            text,
+        })
+    }
+
+    pub(super) async fn read_item_data<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let item_type = input.read_i16().await?;
+        let item_id = input.read_i16().await?;
+        let text_length = input.read_u8().await?;
+        
+        let text= {
+            let mut t = Vec::with_capacity(text_length as usize);
+            input.take(text_length as u64).read_to_end(&mut t).await?;
+            t.into_boxed_slice()
+        };
+
+        Ok(PacketData::ItemData {
+            item_id,
+            item_type,
+            text_length,
+            text,
+        })
+    }
+
+    pub(super) async fn read_increment_statistic<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin
+    {
+        let statistic_id = input.read_i32().await?;
+        let amount = input.read_i8().await?;
+
+        Ok(PacketData::IncrementStatistic {
+            statistic_id,
+            amount,
+        })
+    }
+
+    pub(super) async fn read_disconnect_or_kick<I>(input: &mut I) -> IoResult<Self>
+    where
+        I: AsyncReadExt + Unpin,
+    {
+        let reason = read_ucs2(input).await?;
+
+        Ok(PacketData::DisconnectOrKick {
+            reason
+        })
+    }
+
+    pub(super) async fn read_generic<I>(_input: &mut I) -> IoResult<Self>
     where
         I: AsyncReadExt + Unpin,
     {
