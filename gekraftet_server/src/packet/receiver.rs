@@ -12,14 +12,18 @@ impl PacketData {
 
     pub(super) async fn read_login_request<I>(input: &mut I) -> IoResult<Self>
     where
-        I: AsyncReadExt + Unpin,
+        I: AsyncReadExt + Unpin + tokio::io::AsyncWriteExt,
     {
         let id = input.read_i32().await?;
         let username = read_ucs2(input).await?;
-        let seed = 0;
-        input.read_u64().await?;
-        let dimension = 0;
-        input.read_u8().await?;
+        let seed = input.read_u64().await?;
+        let dimension = input.read_u8().await?;
+
+        input.write_i8(1).await?; // packet id
+        input.write_i32(31415).await?; // entity id
+        input.write_i16(0).await?; // unused string
+        input.write_u64(129903167457028573).await?; // some random seed
+        input.write_i8(0).await?;
 
         Ok(PacketData::LoginRequest {
             id,
