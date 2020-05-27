@@ -1,7 +1,8 @@
-use super::utils::read_ucs2;
+use super::utils::*;
 use std::collections::BTreeMap;
 use tokio::io::{
     AsyncReadExt, 
+    AsyncWriteExt,
     Error as IoError, 
     ErrorKind as IoErrorKind, 
     Result as IoResult
@@ -75,5 +76,56 @@ impl Metadata {
         }
 
         Ok(Self { data: result })
+    }
+
+    pub async fn write_to<I>(&self, input: &mut I) -> IoResult<()> 
+    where
+        I: AsyncWriteExt + Unpin
+    {
+        for (&key, value) in &self.data {
+            match &value {
+                MetadataNode::Byte(b) => {
+                    input.write_i8((0 << 5) | key).await?;
+                    input.write_i8(*b).await?;
+                }
+
+                MetadataNode::Short(s) => {
+                    input.write_i8((1 << 5) | key).await?;
+                    input.write_i16(*s).await?;
+                }
+
+                MetadataNode::Int(i) => {
+                    input.write_i8((2 << 5) | key).await?;
+                    input.write_i32(*i).await?;
+                }
+
+                MetadataNode::Float(f) => {
+                    input.write_i8((3 << 5) | key).await?;
+                    input.write_u32(f.to_bits()).await?;
+                }
+
+                MetadataNode::Str(s) => {
+                    input.write_i8((4 << 5) | key).await?;
+                    write_ucs2(input, s).await?;
+                }
+
+                MetadataNode::ItemStack(id, count, damage) => {
+                    input.write_i8((5 << 5) | key).await?;
+                    input.write_i16(*id).await?;
+                    input.write_i8(*count).await?;
+                    input.write_i16(*damage).await?;
+                }
+
+                MetadataNode::Entity(i0, i1, i2) => {
+                    input.write_i8((5 << 5) | key).await?;
+                    input.write_i32(*i0).await?;
+                    input.write_i32(*i1).await?;
+                    input.write_i32(*i2).await?;
+                }
+            }
+        }
+        
+        input.write_i8(127).await?;
+        Ok(())
     }
 }
