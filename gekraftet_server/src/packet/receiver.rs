@@ -1,6 +1,6 @@
 use super::{ Metadata, PacketData };
 use super::utils::*;
-use tokio::io::{AsyncReadExt, Error as IoError, ErrorKind, Result as IoResult};
+use tokio::io::{AsyncReadExt, Result as IoResult};
 
 impl PacketData {
     pub(super) async fn read_keep_alive<I>(_input: &mut I) -> IoResult<Self>
@@ -570,7 +570,7 @@ impl PacketData {
         I: AsyncReadExt + Unpin,
     {
         let entity_id = input.read_i32().await?;
-        let vehicle_id = input.read_u8().await?;
+        let vehicle_id = input.read_i32().await?;
 
         Ok(PacketData::AttachEntity {
             entity_id,

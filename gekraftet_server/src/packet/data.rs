@@ -248,7 +248,7 @@ pub enum PacketData {
 
     AttachEntity {
         entity_id: i32,
-        vehicle_id: u8,
+        vehicle_id: i32,
     },
 
     EntityMetadata {
