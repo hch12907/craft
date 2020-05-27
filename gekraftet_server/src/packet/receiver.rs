@@ -1,4 +1,4 @@
-use super::{ Metadata, PacketData };
+use super::{ Metadata, Packet, PacketData };
 use super::utils::*;
 use tokio::io::{AsyncReadExt, Result as IoResult};
 
@@ -19,11 +19,14 @@ impl PacketData {
         let seed = input.read_u64().await?;
         let dimension = input.read_u8().await?;
 
-        input.write_i8(1).await?; // packet id
-        input.write_i32(31415).await?; // entity id
-        input.write_i16(0).await?; // unused string
-        input.write_u64(129903167457028573).await?; // some random seed
-        input.write_i8(0).await?;
+        let reply = Packet::new(PacketData::LoginRequest {
+            id: 31415,
+            username: "".into(),
+            seed: 129903167457028573,
+            dimension: 0,
+        });
+
+        reply.write_packet(input).await?;
 
         Ok(PacketData::LoginRequest {
             id,
@@ -38,9 +41,13 @@ impl PacketData {
         I: AsyncReadExt + Unpin + tokio::io::AsyncWriteExt,
     {
         let username_or_hash = read_ucs2(input).await?;
-        input.write_i8(2).await?;
-        input.write_i16(1).await?;
-        input.write_u16(45).await?;
+
+        let reply = Packet::new(PacketData::Handshake {
+            username_or_hash: "-".into(),
+        });
+
+        reply.write_packet(input).await?;
+
         Ok(PacketData::Handshake { username_or_hash })
     }
 
