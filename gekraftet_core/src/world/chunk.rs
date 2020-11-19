@@ -134,7 +134,7 @@ impl Section {
                 bloz.push(bloy.into_full_array().unwrap()).unwrap();
             }
 
-            blox.push(bloz.into_full_array().unwrap());
+            blox.push(bloz.into_full_array().unwrap()).unwrap();
         }
 
         // Convert Vec<[[Block; 16]; 16]> into Box<[[[Block; 16]; 16]; 16]>

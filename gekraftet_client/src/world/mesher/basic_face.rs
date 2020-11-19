@@ -1,4 +1,4 @@
-use cgmath::{ Point2, Point3, Vector2, Vector3 };
+use cgmath::Point3;
 use gekraftet_core::world::{ self, Chunk };
 use crate::mesh::{ Face, Mesh, MeshBuilder };
 use super::{ Mesher, BLOCK_LENGTH };
