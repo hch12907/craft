@@ -1,4 +1,4 @@
-use gekraftet_core::maths::{ Vector3I, Vector3F };
+use cgmath::{ Point3, Vector3 };
 use gekraftet_core::world::{ self, Chunk, Section, SectionPos };
 use gekraftet_core::utils::PartialArray;
 use crate::mesh::{ Face, Mesh, MeshBuilder };
@@ -43,7 +43,7 @@ impl GroupedBlock {
         ((self.bitfield >> 12) & 0xFFF) as usize
     }
 
-    fn extent(&self) -> Vector3I {
+    fn extent(&self) -> Vector3<i32> {
         let x = (self.bitfield >> 8) & 0xF;
         let y = (self.bitfield >> 4) & 0xF;
         let z = (self.bitfield >> 0) & 0xF;
@@ -52,7 +52,7 @@ impl GroupedBlock {
         let y = if y == 0 { 16 } else { y };
         let z = if z == 0 { 16 } else { z };
 
-        Vector3I::new(x as i32, y as i32, z as i32)
+        Vector3::<i32>::new(x as i32, y as i32, z as i32)
     }
 
     fn is_in_group(&self) -> bool {
@@ -128,7 +128,7 @@ impl<'a> GreedyCubeMesher<'a> {
                         let mut face2 = b.faces();
 
                         if b.block_id() == group.block_id() {
-                            group.extend_to(1, 1 + b.extent().y() as usize, 1);
+                            group.extend_to(1, 1 + b.extent().y as usize, 1);
                             b.toggle_group();
                         } else if can_disable_face {
                             face1.disable(Face::BOTTOM);
@@ -161,7 +161,7 @@ impl<'a> GreedyCubeMesher<'a> {
                     let can_disable_face =
                         blocks[groups[idx].block_id()].id != 0 && 
                         blocks[groups[idx2].block_id()].id != 0 &&
-                        groups[idx2].extent().y() >= groups[idx].extent().y();
+                        groups[idx2].extent().y >= groups[idx].extent().y;
 
                     if groups[idx2].is_in_group() {
                         if can_disable_face {
@@ -172,7 +172,7 @@ impl<'a> GreedyCubeMesher<'a> {
                         continue
                     };
                     
-                    if groups[idx].extent().y() == groups[idx2].extent().y() {
+                    if groups[idx].extent().y == groups[idx2].extent().y {
                         let mut face1 = groups[idx].faces();
                         let mut face2 = groups[idx2].faces();
 
@@ -181,9 +181,9 @@ impl<'a> GreedyCubeMesher<'a> {
                             
                             let orig_ext = groups[idx].extent();
                             groups[idx].extend_to(
-                                orig_ext.x() as usize,
-                                orig_ext.y() as usize,
-                                (orig_ext.z() + groups[idx2].extent().z()) as usize,
+                                orig_ext.x as usize,
+                                orig_ext.y as usize,
+                                (orig_ext.z + groups[idx2].extent().z) as usize,
                             );
                         } else if can_disable_face {
                             face1.disable(Face::BACK);
@@ -212,8 +212,8 @@ impl<'a> GreedyCubeMesher<'a> {
                     let can_disable_face =
                         blocks[groups[idx].block_id()].id != 0 && 
                         blocks[groups[idx2].block_id()].id != 0 &&
-                        groups[idx2].extent().y() >= groups[idx].extent().y() &&
-                        groups[idx2].extent().z() >= groups[idx].extent().z();
+                        groups[idx2].extent().y >= groups[idx].extent().y &&
+                        groups[idx2].extent().z >= groups[idx].extent().z;
 
                     if groups[idx2].is_in_group() {
                         if can_disable_face {
@@ -224,8 +224,8 @@ impl<'a> GreedyCubeMesher<'a> {
                         continue
                     };
                     
-                    if groups[idx].extent().y() == groups[idx2].extent().y() &&
-                       groups[idx].extent().z() == groups[idx2].extent().z() 
+                    if groups[idx].extent().y == groups[idx2].extent().y &&
+                       groups[idx].extent().z == groups[idx2].extent().z 
                     {
                         let mut face1 = groups[idx].faces();
                         let mut face2 = groups[idx2].faces();
@@ -236,9 +236,9 @@ impl<'a> GreedyCubeMesher<'a> {
                             let orig_ext = groups[idx].extent();
                             
                             groups[idx].extend_to(
-                                (orig_ext.x() + groups[idx2].extent().x()) as usize,
-                                orig_ext.y() as usize,
-                                orig_ext.z() as usize,
+                                (orig_ext.x + groups[idx2].extent().x) as usize,
+                                orig_ext.y as usize,
+                                orig_ext.z as usize,
                             );
                         } else if can_disable_face {
                             face1.disable(Face::LEFT);
@@ -265,12 +265,14 @@ impl<'a> GreedyCubeMesher<'a> {
             let x = ((pos >> 8) & 0xF) as i32;
             let z = ((pos >> 4) & 0xF) as i32;
             let y = ((pos >> 0) & 0xF) as i32;
-            let extent = Vector3F::from(grp.extent());
-            let origin = Vector3I::new(x, y, z) + block_pos - grp.extent();
+            let extent = grp.extent().cast::<f32>().unwrap();
+            let origin = Point3::<i32>::new(x, y, z)
+                + block_pos.to_homogeneous().truncate()
+                - grp.extent();
 
             let mesh = MeshBuilder::create_cuboid(
                 extent * BLOCK_LENGTH, 
-                (Vector3F::from(origin) + 0.5 * extent) * BLOCK_LENGTH,
+                (origin.cast::<f32>().unwrap() + 0.5 * extent) * BLOCK_LENGTH,
                 grp.faces()
             );
             
@@ -299,9 +301,9 @@ impl<'a> Mesher<'a> for GreedyCubeMesher<'a> {
         let mut meshes = MeshBuilder::new();
         for (i, sect) in self.chunk.sections().iter().enumerate() {
             let sect_pos = SectionPos::new(
-                self.chunk.position().x(),
-                self.chunk.position().y() + i as i32,
-                self.chunk.position().z(),
+                self.chunk.position().x,
+                self.chunk.position().y + i as i32,
+                self.chunk.position().z,
             );
             meshes = meshes.add_mesh(self.intrasection_cull(sect_pos, sect));
         };

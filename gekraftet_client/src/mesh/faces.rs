@@ -1,4 +1,3 @@
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Face {
     enabled: u8,

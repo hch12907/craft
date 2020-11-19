@@ -1,5 +1,3 @@
-use crate::maths::*;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block {
     pub metadata: u16,

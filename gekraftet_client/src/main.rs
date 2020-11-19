@@ -7,7 +7,7 @@ mod renderer;
 mod windowing;
 mod world;
 
-use gekraftet_core::maths::*;
+use cgmath::*;
 use gekraftet_core::world::*;
 use camera::*;
 use input::*;
@@ -15,14 +15,16 @@ use renderer::*;
 use windowing::*;
 use world::Mesher;
 
+pub type RGBA = cgmath::Vector4<f32>;
+
 fn main() {
     let w = Window::create_window();
     let mut r = GlRenderer::new(&w, 
-        Matrix4::perspective(Deg(55.0), 16.0/9.0, 0.1, 500.0)
+        cgmath::perspective(Deg(55.0), 16.0/9.0, 0.1, 500.0)
     );
 
     let (tx, rx) = std::sync::mpsc::channel::<(i32, i32, i32, mesh::Mesh)>();
-    let (bound0, bound1) = (-32, 32);
+    let (bound0, bound1) = (-16i32, 16i32);
 
     let world_minister = std::thread::spawn(move || {
         let tx = tx;
@@ -33,7 +35,7 @@ fn main() {
                 let mut noise = Noise::<Perlin3D>::with_option(
                     NoiseGenOption::new()
                         .octaves(16)
-                        .amplitude(5.0)
+                        .amplitude(10.0)
                         .persistance(0.5)
                         .frequency(628.318530)
                         .lacunarity(0.5),
@@ -41,11 +43,11 @@ fn main() {
                 );
 
                 std::thread::spawn(move || {
-                    let pos = Vector3I::new(x, 0, y);
+                    let pos = Point3::<i32>::new(x, 0, y);
                     let chunk = Chunk::new(pos, &mut noise);
                     let mesher = world::GreedyCubeMesher::from_chunk(&chunk);
                     let mesh = mesher.generate_mesh();
-                    tx.send((pos.x(), pos.y(), pos.z(), mesh))
+                    tx.send((pos.x, pos.y, pos.z, mesh))
                 });
             }
         }
@@ -56,9 +58,9 @@ fn main() {
     let speed = 10.0;
 
     let mut mouse_locked = false;
-    let mut pos = Vector3F::new(0.0, 4.5, -3.0);
+    let mut pos = Point3::<f32>::new(0.0, 200.0, 0.0);
 
-    let mut cam = Camera::new(pos, Vector3F::new(0.0, 0.0, 0.0));
+    let mut cam = Camera::new(pos, Vector3::<f32>::new(2.5, -200.0, 0.5));
     let mut input_manager = InputManager::new();
 
     let mut last_time = Instant::now();
@@ -86,6 +88,9 @@ fn main() {
                         }
                     },
 
+                    WindowEvent::Resized(glutin::dpi::PhysicalSize::<u32> { width, height }) => 
+                        r.change_viewport(width, height),
+
                     _ => {}
                 }
             },
@@ -93,7 +98,7 @@ fn main() {
             Event::MainEventsCleared => {
                 let mut new_speed = speed;
                 let sensitivity = cam.sensitivity();
-                let up = Vector3F::new(0.0, 1.0, 0.0);
+                let up = Vector3::<f32>::new(0.0, 1.0, 0.0);
 
                 cam.move_camera(pos);
 

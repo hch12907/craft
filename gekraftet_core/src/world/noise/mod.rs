@@ -4,7 +4,7 @@ mod perlin2d;
 mod perlin3d;
 mod sine;
 
-use crate::maths::*;
+use cgmath::Point3;
 
 pub use generator::NoiseGen;
 pub use options::NoiseGenOption;
@@ -37,7 +37,7 @@ impl<G: NoiseGen> Noise<G> {
         }
     }
 
-    pub fn generate_noise(&mut self, at: Vector3F) -> f64 {
+    pub fn generate_noise(&mut self, at: Point3<f32>) -> f64 {
         self.generator.generate_noise_at(at)
     }
 }

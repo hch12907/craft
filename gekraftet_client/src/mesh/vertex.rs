@@ -1,17 +1,18 @@
-use gekraftet_core::maths::*;
+use cgmath::{ Point2, Point3 };
+use crate::RGBA;
 
 #[derive(Clone, Debug)]
 pub struct Vertex {
-    pub position: Vector3F,
+    pub position: Point3<f32>,
     pub color: RGBA,
-    pub texture_coord: Vector2F,
+    pub texture_coord: Point2<f32>,
 }
 
 impl Vertex {
     pub fn new(
-        pos: Vector3F,
+        pos: Point3<f32>,
         color: RGBA,
-        t_coord: Vector2F,
+        t_coord: Point2<f32>,
     ) -> Self {
         Self {
             position: pos,

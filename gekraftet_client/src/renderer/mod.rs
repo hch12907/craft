@@ -6,19 +6,19 @@ use crate::windowing::Window;
 use crate::mesh::Mesh;
 use gl::types::*;
 use shader::{ Linked, ShaderProgram };
-use gekraftet_core::maths::Matrix4;
+use cgmath::Matrix4;
 use std::ptr;
 
 pub use errors::RenderError;
 
 pub struct GlRenderer {
-    projection: Matrix4,
+    projection: Matrix4<f32>,
     programs: [ShaderProgram<Linked>; 1],
     vaos: Vec<(GLuint, i32)>,
 }
 
 impl GlRenderer {
-    pub fn new(ctx: &Window, proj: Matrix4) -> Self {
+    pub fn new(ctx: &Window, proj: Matrix4<f32>) -> Self {
         gl::load_with(|s| ctx.context().get_proc_address(s) as *const _);
 
         let prog = ShaderProgram::new();
@@ -79,11 +79,15 @@ impl GlRenderer {
         self.vaos.push((vao, mesh.indices().len() as i32));
     }
 
-    pub fn render(&self, time: f32, view: Matrix4) {
+    pub fn change_viewport(&self, width: u32, height: u32) {
         unsafe {
-            use gekraftet_core::maths;
+            gl::Viewport(0, 0, width as i32, height as i32);
+        }
+    }
 
-            let model = maths::Matrix4::scale(1.0);
+    pub fn render(&self, time: f32, view: Matrix4<f32>) {
+        unsafe {
+            let model = Matrix4::from_scale(1.0f32);
 
             gl::ProvokingVertex(gl::LAST_VERTEX_CONVENTION);
 

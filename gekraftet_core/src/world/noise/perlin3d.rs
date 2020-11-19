@@ -1,5 +1,5 @@
-use crate::maths::{ Vector3D, Vector3I, Vector3F, Random };
-use crate::utils::{ lerp, fade };
+use cgmath::{ Point3, Vector3 };
+use crate::utils::{ lerp, fade, Random };
 use super::{ NoiseGen, NoiseGenOption };
 
 use rand::{ Rng, SeedableRng };
@@ -19,7 +19,7 @@ pub struct Perlin3D {
 }
 
 impl Perlin3D {
-    fn generate_noise(&mut self, pos: Vector3F) -> f64 {
+    fn generate_noise(&mut self, pos: Point3<f32>) -> f64 {
         // for finding the point inside a cube (see `relative` below)
         let round_down = |a, b| if a as f32 > b { 
             b - (a - 1) as f32
@@ -27,25 +27,25 @@ impl Perlin3D {
             b - a as f32
         };
 
-        let grid = Vector3I::from(pos);
-        let cube = grid & 255;
-        let relative = Vector3D::new(
-            round_down(grid.x(), pos.x()) as f64,
-            round_down(grid.y(), pos.y()) as f64,
-            round_down(grid.z(), pos.z()) as f64,
+        let grid = pos.cast::<i32>().unwrap();
+        let cube = grid.map(|i| i & 255);
+        let relative = Vector3::<f64>::new(
+            round_down(grid.x, pos.x) as f64,
+            round_down(grid.y, pos.y) as f64,
+            round_down(grid.z, pos.z) as f64,
         );
 
-        let weight_n = fade(relative.z());
-        let weight_m = fade(relative.y());
-        let weight_l = fade(relative.x());
+        let weight_n = fade(relative.z);
+        let weight_m = fade(relative.y);
+        let weight_l = fade(relative.x);
 
-        let  c = cube.x() as usize;
-        let  a = (self.permutations[c + 0] as i32 + cube.y()) as usize;
-        let aa = (self.permutations[a + 0] as i32 + cube.z()) as usize;
-        let ab = (self.permutations[a + 1] as i32 + cube.z()) as usize;
-        let  b = (self.permutations[c + 1] as i32 + cube.y()) as usize;
-        let ba = (self.permutations[b + 0] as i32 + cube.z()) as usize;
-        let bb = (self.permutations[b + 1] as i32 + cube.z()) as usize;
+        let  c = cube.x as usize;
+        let  a = (self.permutations[c + 0] as i32 + cube.y) as usize;
+        let aa = (self.permutations[a + 0] as i32 + cube.z) as usize;
+        let ab = (self.permutations[a + 1] as i32 + cube.z) as usize;
+        let  b = (self.permutations[c + 1] as i32 + cube.y) as usize;
+        let ba = (self.permutations[b + 0] as i32 + cube.z) as usize;
+        let bb = (self.permutations[b + 1] as i32 + cube.z) as usize;
 
         let grad = |hash, x: f64, y, z| -> f64 {
             let hash = hash & 15;
@@ -64,7 +64,7 @@ impl Perlin3D {
             r0 + r1
         };
 
-        let (x, y, z) = (relative.x(), relative.y(), relative.z());
+        let (x, y, z) = (relative.x, relative.y, relative.z);
 
         let noise_000 = grad(self.permutations[aa+0], x,       y,       z      );
         let noise_001 = grad(self.permutations[ba+0], x - 1.0, y,       z      );
@@ -108,7 +108,7 @@ impl NoiseGen for Perlin3D {
         }
     }
 
-    fn generate_noise_at(&mut self, pos: Vector3F) -> f64 {
+    fn generate_noise_at(&mut self, pos: Point3<f32>) -> f64 {
         let mut total = 0.0;
 
         let mut amplitude = self.amplitude;

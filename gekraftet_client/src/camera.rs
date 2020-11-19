@@ -1,15 +1,15 @@
-use gekraftet_core::maths::*;
+use cgmath::{ Deg, InnerSpace, Matrix4, Point3, Rad, Vector3 };
 
 pub struct Camera {
-    position: Vector3F,
-    target: Vector3F,
+    position: Point3<f32>,
+    target: Vector3<f32>,
     sensitivity: f32,
     pitch: f32,
     yaw: f32,
 }
 
 impl Camera {
-    pub fn new(position: Vector3F, target: Vector3F) -> Self {
+    pub fn new(position: Point3<f32>, target: Vector3<f32>) -> Self {
         Self {
             position,
             target,
@@ -19,7 +19,7 @@ impl Camera {
         }
     }
 
-    pub fn front(&self) -> Vector3F {
+    pub fn front(&self) -> Vector3<f32> {
         self.target
     }
 
@@ -38,7 +38,7 @@ impl Camera {
         self.yaw += x_angle;
         self.pitch += y_angle;
 
-        let deg90: Rad = Deg(89.9).into();
+        let deg90 = Rad::from(Deg(89.9f32));
         let deg90 = deg90.0;
 
         // Prevent camera from flipping y
@@ -50,22 +50,22 @@ impl Camera {
             self.pitch
         };
 
-        self.target = Vector3F::new(
+        self.target = Vector3::<f32>::new(
             self.yaw.cos() * self.pitch.cos(),
             self.pitch.sin(),
             self.yaw.sin() * self.pitch.cos()
         ).normalize();
     }
 
-    pub fn move_camera(&mut self, pos: Vector3F) {
+    pub fn move_camera(&mut self, pos: Point3<f32>) {
         self.position = pos;
     }
 
-    pub fn generate_view(&self) -> Matrix4 {
-        Matrix4::look_at(
+    pub fn generate_view(&self) -> Matrix4<f32> {
+        Matrix4::<f32>::look_at(
             self.position, 
             self.position + self.target, 
-            Vector3F::new(0.0, 1.0, 0.0)
+            Vector3::<f32>::new(0.0, 1.0, 0.0)
         )
     }
 }

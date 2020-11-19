@@ -1,5 +1,5 @@
-use crate::maths::{ Vector2D, Vector2F, Vector2I, Vector3F, Random };
-use crate::utils::{ lerp, fade };
+use cgmath::{ Point2, Point3 };
+use crate::utils::{ lerp, fade, Random };
 use super::{ NoiseGen, NoiseGenOption };
 
 use rand::{ Rng, SeedableRng };
@@ -18,7 +18,7 @@ pub struct Perlin2D {
 }
 
 impl Perlin2D {
-    fn generate_noise(&mut self, pos: Vector2F) -> f64 {
+    fn generate_noise(&mut self, pos: Point2<f32>) -> f64 {
         // for finding the point inside a cube (see `relative` below)
         let round_down = |a, b| if a as f32 > b { 
             b - (a - 1) as f32
@@ -26,18 +26,18 @@ impl Perlin2D {
             b - a as f32
         };
 
-        let grid = Vector2I::from(pos);
-        let cube = grid & 255;
-        let relative = Vector2D::new(
-            round_down(grid.x(), pos.x()) as f64,
-            round_down(grid.y(), pos.y()) as f64,
+        let grid = pos.cast::<i32>().unwrap();
+        let cube = grid.map(|i| i & 255);
+        let relative = Point2::<f64>::new(
+            round_down(grid.x, pos.x) as f64,
+            round_down(grid.y, pos.y) as f64,
         );
 
-        let weight_m = fade(relative.y());
-        let weight_l = fade(relative.x());
+        let weight_m = fade(relative.y);
+        let weight_l = fade(relative.x);
 
-        let  c = cube.x() as usize;
-        let  a = (self.permutations[c + 0] as i32 + cube.y()) as usize;
+        let  c = cube.x as usize;
+        let  a = (self.permutations[c + 0] as i32 + cube.y) as usize;
         let aa = (self.permutations[a + 0]) as usize;
         let ab = (self.permutations[a + 1]) as usize;
 
@@ -58,7 +58,7 @@ impl Perlin2D {
             r0 + r1
         };
 
-        let (x, y) = (relative.x(), relative.y());
+        let (x, y) = (relative.x, relative.y);
 
         let noise_000 = grad(self.permutations[aa+0], x, y,       0.0 + 0.0);
         let noise_010 = grad(self.permutations[ab+0], x, y - 1.0, 0.0 + 0.0);
@@ -93,13 +93,13 @@ impl NoiseGen for Perlin2D {
         }
     }
 
-    fn generate_noise_at(&mut self, pos: Vector3F) -> f64 {
+    fn generate_noise_at(&mut self, pos: Point3<f32>) -> f64 {
         let mut total = 0.0;
 
         let mut amplitude = self.amplitude;
         let mut frequency = self.frequency;
         
-        let pos = pos.trunc2();
+        let pos = Point2::new(pos.x, pos.y);
 
         for _ in 0..self.octaves {
             total += self.generate_noise(pos * frequency) * amplitude;

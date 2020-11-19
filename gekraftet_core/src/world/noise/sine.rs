@@ -1,4 +1,4 @@
-use crate::maths::{ Vector3F, Vector2D };
+use cgmath::{ Point2, Point3 };
 use super::{ NoiseGen, NoiseGenOption };
 
 pub struct Sine2D {
@@ -21,17 +21,17 @@ impl NoiseGen for Sine2D {
         }
     }
 
-    fn generate_noise_at(&mut self, pos: Vector3F) -> f64 {
+    fn generate_noise_at(&mut self, pos: Point3<f32>) -> f64 {
         let mut total = 0.0;
 
         let mut amplitude = self.amplitude;
         let mut frequency = self.frequency;
 
-        let pos = pos.trunc2();
+        let pos = Point2::new(pos.x, pos.y);
 
         for _ in 0..self.octaves {
-            let pos = Vector2D::from(pos * frequency);
-            let noise = 0.5 * (pos.x().sin() + pos.y().sin());
+            let pos = (pos * frequency).cast::<f64>().unwrap();
+            let noise = 0.5 * (pos.x.sin() + pos.y.sin());
 
             total += noise * amplitude;
 

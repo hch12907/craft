@@ -1,4 +1,4 @@
-use gekraftet_core::maths::{ Vector3I, Vector3F };
+use cgmath::{ Point2, Point3, Vector2, Vector3 };
 use gekraftet_core::world::{ self, Chunk };
 use crate::mesh::{ Face, Mesh, MeshBuilder };
 use super::{ Mesher, BLOCK_LENGTH };
@@ -38,13 +38,13 @@ impl<'a> BasicFaceMesher<'a> {
 
                 let (x, y, z) = (x as i32, y as i32, z as i32);
 
-                let pos = Vector3I::new(
-                    x + self.chunk.position().x() * world::CHUNK_LENGTH_X as i32,
-                    y + self.chunk.position().y() * world::CHUNK_LENGTH_Y as i32 + (i * world::SECTION_LENGTH_X) as i32,
-                    z + self.chunk.position().z() * world::CHUNK_LENGTH_Z as i32
+                let pos = Point3::<i32>::new(
+                    x + self.chunk.position().x * world::CHUNK_LENGTH_X as i32,
+                    y + self.chunk.position().y * world::CHUNK_LENGTH_Y as i32 + (i * world::SECTION_LENGTH_X) as i32,
+                    z + self.chunk.position().z * world::CHUNK_LENGTH_Z as i32
                 );
 
-                let origin = Vector3F::from(pos) * BLOCK_LENGTH;
+                let origin = pos.cast::<f32>().unwrap() * BLOCK_LENGTH;
 
                 // basic culling
                 let mut faces = Face::all();

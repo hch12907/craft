@@ -3,7 +3,7 @@ use gl;
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 
-use gekraftet_core::maths::*;
+use cgmath::{ Vector2, Vector3, Vector4, Matrix2, Matrix3, Matrix4 };
 use super::shader::*;
 
 // A handy alias for cutting down signature length
@@ -150,13 +150,13 @@ macro_rules! impl_uniform_matrix {
     };
 }
 
-impl_uniform_vector!(Vector2F, gl::Uniform2f, 0, 1);
-impl_uniform_vector!(Vector3F, gl::Uniform3f, 0, 1, 2);
-impl_uniform_vector!(Vector4F, gl::Uniform4f, 0, 1, 2, 3);
+impl_uniform_vector!(Vector2<f32>, gl::Uniform2f, 0, 1);
+impl_uniform_vector!(Vector3<f32>, gl::Uniform3f, 0, 1, 2);
+impl_uniform_vector!(Vector4<f32>, gl::Uniform4f, 0, 1, 2, 3);
 
-impl_uniform_matrix!(Matrix2, gl::UniformMatrix2fv);
-impl_uniform_matrix!(Matrix3, gl::UniformMatrix3fv);
-impl_uniform_matrix!(Matrix4, gl::UniformMatrix4fv);
+impl_uniform_matrix!(Matrix2<f32>, gl::UniformMatrix2fv);
+impl_uniform_matrix!(Matrix3<f32>, gl::UniformMatrix3fv);
+impl_uniform_matrix!(Matrix4<f32>, gl::UniformMatrix4fv);
 
 impl_uniform_scalar!(f32, gl::Uniform1fv);
 impl_uniform_scalar!(f64, gl::Uniform1dv);

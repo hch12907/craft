@@ -1,5 +1,5 @@
 use std::ops::Deref;
-use crate::maths::{ Vector3F, Vector3I };
+use cgmath::Vector3;
 use crate::utils::{ lerp, PartialArray, PartialHeapArray };
 use super::*;
 
@@ -26,7 +26,7 @@ impl Chunk {
 
         for i in 0..(CHUNK_LENGTH_Y / SECTION_LENGTH_Y) as i32 {
             let ChunkPos(pos) = at;
-            let sect = SectionPos::new(pos.x(), pos.y() * 16 + i, pos.z());
+            let sect = SectionPos::new(pos.x, pos.y * 16 + i, pos.z);
             sections.push(Section::new(sect, noise)).unwrap();
         };
 
@@ -65,13 +65,13 @@ impl Section {
         for x in 0..=NOISE_SAMPLES_X as i32 {
             for z in 0..=NOISE_SAMPLES_Z as i32 {
                 for y in 0..=NOISE_SAMPLES_Y as i32 {
-                    let relative_pos = Vector3I::new(
+                    let relative_pos = Vector3::<i32>::new(
                         x * NOISE_FACTOR_X as i32,
                         y * NOISE_FACTOR_Y as i32,
                         z * NOISE_FACTOR_Z as i32
                     );
 
-                    let block_pos = Vector3F::from(starting + relative_pos);
+                    let block_pos = (starting + relative_pos).cast::<f32>().unwrap();
                     let noise = noise.generate_noise(block_pos);
                     let (x, y, z) = (x as usize, y as usize, z as usize);
                     noises[x][y][z] = noise;
@@ -89,7 +89,7 @@ impl Section {
                 let mut bloy = PartialArray::<Block, SECTION_LENGTH_X>::new();
 
                 for y in 0..SECTION_LENGTH_Y {
-                    let relative_pos = Vector3I::new(x as i32, y as i32, z as i32);
+                    let relative_pos = Vector3::<i32>::new(x as i32, y as i32, z as i32);
                     let actual_pos = starting + relative_pos;
 
                     let noise = {
@@ -122,7 +122,7 @@ impl Section {
                         lerp(lerp0, lerp1, w)
                     };
 
-                    let id = if noise + 64.0 - actual_pos.y() as f64 > 0.0 {
+                    let id = if noise + 64.0 - actual_pos.y as f64 > 0.0 {
                         1
                     } else {
                         0
@@ -150,7 +150,7 @@ impl Section {
             ));
         
         for (x, y, z) in range {
-            let relative_pos = Vector3I::new(x, y, z);
+            let relative_pos = Vector3::<i32>::new(x, y, z);
             let actual_pos = starting + relative_pos;
             let block_pos = Vector3F::from(actual_pos);
         };

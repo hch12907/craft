@@ -1,4 +1,5 @@
-use gekraftet_core::maths::*;
+use cgmath::{ Point3, Point2, Vector3 };
+use crate::RGBA;
 use super::{ Face, Mesh, Texture, Vertex };
 //use rand::random;
 
@@ -37,7 +38,7 @@ impl MeshBuilder {
         }
     }
 
-    pub fn create_cuboid(length: Vector3F, origin: Vector3F, faces: Face) -> Mesh {
+    pub fn create_cuboid(length: Vector3<f32>, origin: Point3<f32>, faces: Face) -> Mesh {
         if faces == Face::empty() {
             return MeshBuilder::new().build()
         };
@@ -56,10 +57,10 @@ impl MeshBuilder {
             };
 
             Vertex::new(
-                Vector3F::new(x, y, z) + origin,
+                Point3::<f32>::new(x + origin.x, y + origin.y, z + origin.z),
                 color,
                 //RGBA::new(0.8, 0.8, 0.8, 1.0),
-                Vector2F::new(lighting as f32 * 0.2, 0.0)
+                Point2::<f32>::new(lighting as f32 * 0.2, 0.0)
             )
         };
 
@@ -67,14 +68,14 @@ impl MeshBuilder {
             for &index in indices.iter() {
                 if mapped_indices[index] == std::u32::MAX {
                     let vertex = match index {
-                        0 => create_vertex(-halved.x(), -halved.y(), -halved.z(), LIGHTING_VERT[0]), // index 0
-                        1 => create_vertex(-halved.x(),  halved.y(), -halved.z(), LIGHTING_VERT[1]), // index 1
-                        2 => create_vertex( halved.x(),  halved.y(), -halved.z(), LIGHTING_VERT[2]), // index 2
-                        3 => create_vertex( halved.x(), -halved.y(), -halved.z(), LIGHTING_VERT[3]), // index 3
-                        4 => create_vertex(-halved.x(), -halved.y(),  halved.z(), LIGHTING_VERT[4]), // index 4
-                        5 => create_vertex(-halved.x(),  halved.y(),  halved.z(), LIGHTING_VERT[5]), // index 5
-                        6 => create_vertex( halved.x(),  halved.y(),  halved.z(), LIGHTING_VERT[6]), // index 6
-                        7 => create_vertex( halved.x(), -halved.y(),  halved.z(), LIGHTING_VERT[7]), // index 7
+                        0 => create_vertex(-halved.x, -halved.y, -halved.z, LIGHTING_VERT[0]), // index 0
+                        1 => create_vertex(-halved.x,  halved.y, -halved.z, LIGHTING_VERT[1]), // index 1
+                        2 => create_vertex( halved.x,  halved.y, -halved.z, LIGHTING_VERT[2]), // index 2
+                        3 => create_vertex( halved.x, -halved.y, -halved.z, LIGHTING_VERT[3]), // index 3
+                        4 => create_vertex(-halved.x, -halved.y,  halved.z, LIGHTING_VERT[4]), // index 4
+                        5 => create_vertex(-halved.x,  halved.y,  halved.z, LIGHTING_VERT[5]), // index 5
+                        6 => create_vertex( halved.x,  halved.y,  halved.z, LIGHTING_VERT[6]), // index 6
+                        7 => create_vertex( halved.x, -halved.y,  halved.z, LIGHTING_VERT[7]), // index 7
                         _ => unreachable!(),
                     };
                     actual_indices.push(added_vertices.len() as u32);
@@ -119,9 +120,9 @@ impl MeshBuilder {
         builder.build()
     }
 
-    pub fn create_cube(length: f32, origin: Vector3F, faces: Face) -> Mesh {
+    pub fn create_cube(length: f32, origin: Point3<f32>, faces: Face) -> Mesh {
         Self::create_cuboid(
-            Vector3F::new(length, length, length), 
+            Vector3::<f32>::new(length, length, length), 
             origin,
             faces
         )
