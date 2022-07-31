@@ -68,6 +68,7 @@ fn main() {
     let mut time = 0.0;
 
     w.run(move |event, cl, context| {
+        use glutin::window::CursorGrabMode;
         match event {
             Event::WindowEvent { event, .. } => {
                 match event {
@@ -79,8 +80,11 @@ fn main() {
                         use glutin::event::MouseButton;
                         match button {
                             MouseButton::Left => {
-                                context.window().set_cursor_grab(true).unwrap();
-                                context.window().set_cursor_visible(false);
+                                context.window()
+                                    .set_cursor_grab(CursorGrabMode::Locked)
+                                    .expect("unable to grab cursor");
+                                context.window()
+                                    .set_cursor_visible(false);
                                 mouse_locked = true;
                                 input_manager.unsuspend_input();
                             },
@@ -131,8 +135,11 @@ fn main() {
                         &Key::D => pos += new_speed * delta * cam.front().cross(up).normalize(),
 
                         &Key::Escape => {
-                            context.window().set_cursor_grab(false).unwrap();
-                            context.window().set_cursor_visible(true);
+                            context.window()
+                                .set_cursor_grab(CursorGrabMode::None)
+                                .expect("unable to ungrab cursor");
+                            context.window()
+                                .set_cursor_visible(true);
                             mouse_locked = false;
                         },
                         _ => {}
@@ -143,7 +150,7 @@ fn main() {
                     cam.set_sensitivity(sensitivity + 0.05)
                 }
 
-                if input_manager.is_key_pressed(Key::Subtract) {
+                if input_manager.is_key_pressed(Key::Minus) {
                     cam.set_sensitivity(sensitivity - 0.05)
                 }
 
